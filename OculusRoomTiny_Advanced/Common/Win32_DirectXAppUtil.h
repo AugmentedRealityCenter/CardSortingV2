@@ -69,6 +69,7 @@ struct DepthBuffer
         dsDesc.CPUAccessFlags = 0;
         dsDesc.MiscFlags = 0;
         dsDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+		
         ID3D11Texture2D * Tex;
         Device->CreateTexture2D(&dsDesc, NULL, &Tex);
         Device->CreateDepthStencilView(Tex, NULL, &TexDsv);
@@ -532,7 +533,7 @@ struct Material
 		// Create depth state
 		D3D11_DEPTH_STENCIL_DESC dss;
 		memset(&dss, 0, sizeof(dss));
-		dss.DepthEnable = true;
+		dss.DepthEnable = false;
 		dss.DepthFunc = flags & MAT_ZALWAYS ? D3D11_COMPARISON_ALWAYS : D3D11_COMPARISON_LESS;
 		dss.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 		DIRECTX.Device->CreateDepthStencilState(&dss, &DepthState);
@@ -741,7 +742,7 @@ struct Scene
             )
         );
 
-		TriangleSet spareCube;
+		/*TriangleSet spareCube;
 		spareCube.AddSolidColorBox(0.1f, -0.1f, 0.1f, -0.1f, +0.1f, -0.1f, 0xffff0000);
 		Add(
             new Model(&spareCube, XMFLOAT3(0, -10, 0), XMFLOAT4(0, 0, 0, 1),
@@ -828,7 +829,7 @@ struct Scene
                     new Texture(false, 256, 256, Texture::AUTO_WHITE)
                 )
             )
-        ); // Fixtures & furniture
+        ); // Fixtures & furniture*/
 	}
 
 	Scene() : numModels(0) {}

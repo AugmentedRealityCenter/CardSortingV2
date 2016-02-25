@@ -122,7 +122,7 @@ static bool MainLoop(bool retryCreate)
 	ovrTexture     * mirrorTexture = nullptr;
 	OculusTexture  * pEyeRenderTexture[2] = { nullptr, nullptr };
 	DepthBuffer    * pEyeDepthBuffer[2] = { nullptr, nullptr };
-    //Scene          * roomScene = nullptr; 
+    Scene          * roomScene = nullptr; 
     Camera         * mainCam = nullptr;
 	D3D11_TEXTURE2D_DESC td = {};
 
@@ -178,7 +178,7 @@ static bool MainLoop(bool retryCreate)
     }
 
 	// Create the room model
-    //roomScene = new Scene(false);
+    roomScene = new Scene(false);
 
 	// Create camera
     mainCam = new Camera(&XMVectorSet(0.0f, 1.6f, 5.0f, 0), &XMQuaternionIdentity());
@@ -267,6 +267,7 @@ static bool MainLoop(bool retryCreate)
 				                            p.M[0][3], p.M[1][3], p.M[2][3], p.M[3][3]);
 			    XMMATRIX prod = XMMatrixMultiply(view, proj);
 			    
+				InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight, 1.0f);
 				OVR::OvMarkerData* dt = NULL;
 				//Camera View
 				if (eye == 0) {
@@ -287,11 +288,13 @@ static bool MainLoop(bool retryCreate)
 				}
 
 				RendererCamPlane(DIRECTX.Device, DIRECTX.Context);
+
 				for (int i = 0; i < pOvrAR->GetMarkerDataSize(); i++) {
 					//TODO: update experiment model from markers
 					//TODO: Render markers
-					std::cout << "placeholder" << std::endl;
+					roomScene->Models[0]->Pos = DirectX::XMFLOAT3(dt[i].translate.x, dt[i].translate.y, dt[i].translate.z);
 				}
+				roomScene->Render(&prod,1.0,1.0,1.0,1.0,true);
 		    }
 
 
@@ -328,7 +331,7 @@ static bool MainLoop(bool retryCreate)
 	// Release resources
 Done:
     delete mainCam;
-    //delete roomScene;
+    delete roomScene;
 	if (mirrorTexture) ovr_DestroyMirrorTexture(HMD, mirrorTexture);
     for (int eye = 0; eye < 2; ++eye)
     {
