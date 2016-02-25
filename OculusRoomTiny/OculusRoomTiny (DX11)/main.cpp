@@ -181,7 +181,7 @@ static bool MainLoop(bool retryCreate)
     roomScene = new Scene(false);
 
 	// Create camera
-    mainCam = new Camera(&XMVectorSet(0.0f, 1.6f, 5.0f, 0), &XMQuaternionIdentity());
+    mainCam = new Camera(&XMVectorSet(0.0f, 0.0f, 0.0f, 0), &XMQuaternionIdentity());
 
 	// Setup VR components, filling out description
 	ovrEyeRenderDesc eyeRenderDesc[2];
@@ -209,7 +209,7 @@ static bool MainLoop(bool retryCreate)
 		InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight, 1.0f);
 
 		pOvrAR = new OVR::OvrvisionAR(0.025f, ovWidth, ovHeight, ovrvision.GetCamFocalPoint());
-		pOvrAR->SetDetectThreshold(130.0f);
+		pOvrAR->SetDetectThreshold(50.0f);
 	}
 
 	// Main loop
@@ -289,13 +289,14 @@ static bool MainLoop(bool retryCreate)
 
 				RendererCamPlane(DIRECTX.Device, DIRECTX.Context);
 
+				roomScene->Models[0]->Pos = DirectX::XMFLOAT3(1000.0f, 1000.0f, 1000.0f);
 				for (int i = 0; i < pOvrAR->GetMarkerDataSize(); i++) {
 					//TODO: update experiment model from markers
 					//TODO: Render markers
-					float mult = 50.0f;
-					roomScene->Models[0]->Pos = DirectX::XMFLOAT3(XMVectorGetByIndex(CombinedPos, 0) + mult*dt[i].translate.x,
-						XMVectorGetByIndex(CombinedPos, 1) + mult*dt[i].translate.y,
-						XMVectorGetByIndex(CombinedPos, 2) - mult*dt[i].translate.z);
+					float mult = 1.0f;
+					roomScene->Models[0]->Pos = DirectX::XMFLOAT3(mult*(dt[i].translate.x+0.032f),
+						mult*dt[i].translate.y,
+						 -mult*dt[i].translate.z);
 				}
 				roomScene->Render(&prod,1.0,1.0,1.0,1.0,true);
 		    }

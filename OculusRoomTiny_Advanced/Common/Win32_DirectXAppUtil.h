@@ -733,9 +733,9 @@ struct Scene
     void Init(bool includeIntensiveGPUobject)
 	{
 		TriangleSet cube;
-		cube.AddSolidColorBox(0.5f, -0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0xff404040);
+		cube.AddSolidColorBox(0.0125f, -0.0125f, 0.0125f, -0.0125f, 0.0125f, -0.0125f, 0xff404040);
 		Add(
-            new Model(&cube, XMFLOAT3(0, 0, 0), XMFLOAT4(0, 0, 0, 1),
+            new Model(&cube, XMFLOAT3(0, 0, -0.35f), XMFLOAT4(0, 0, 0, 1),
                 new Material(
                     new Texture(false, 256, 256, Texture::AUTO_CEILING)
                 )
