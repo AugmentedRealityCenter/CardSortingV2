@@ -23,6 +23,8 @@ limitations under the License.
 /// or pressing any key. 
 /// It runs with DirectX11.
 
+#include <iostream>
+
 // Include DirectX
 #include "../../OculusRoomTiny_Advanced/Common/Win32_DirectXAppUtil.h"
 
@@ -30,6 +32,7 @@ limitations under the License.
 #include "OVR_CAPI_D3D.h"
 
 #include <ovrvision_pro.h>	//Ovrvision SDK
+#include <ovrvision_ar.h>
 
 extern int InitializeCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, int w, int h, float zsize);
 extern int RendererCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext);
@@ -37,6 +40,7 @@ extern int SetCamImage(ID3D11DeviceContext* DeviceContext, unsigned char* camIma
 extern int CleanCamPlane();
 
 OVR::OvrvisionPro ovrvision;
+OVR::OvrvisionAR* pOvrAR;
 int ovWidth = 0;
 int ovHeight = 0;
 int ovPixelsize = 4;
@@ -203,6 +207,9 @@ static bool MainLoop(bool retryCreate)
 		ovrvision.SetCameraSyncMode(false);
 
 		InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight, 1.0f);
+
+		pOvrAR = new OVR::OvrvisionAR(0.025f, ovWidth, ovHeight, ovrvision.GetCamFocalPoint());
+		pOvrAR->SetDetectThreshold(130.0f);
 	}
 
 	// Main loop
@@ -260,14 +267,34 @@ static bool MainLoop(bool retryCreate)
 				                            p.M[0][3], p.M[1][3], p.M[2][3], p.M[3][3]);
 			    XMMATRIX prod = XMMatrixMultiply(view, proj);
 			    
+				OVR::OvMarkerData* dt = NULL;
 				//Camera View
-				if (eye == 0)
-					SetCamImage(DIRECTX.Context, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT),ovWidth*ovPixelsize);
-				else
+				if (eye == 0) {
+					pOvrAR->SetImageBGRA(ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT));
+					pOvrAR->Render();
+					dt = pOvrAR->GetMarkerData();
+					SetCamImage(DIRECTX.Context, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT), ovWidth*ovPixelsize);
+				}
+				else {
+					//TODO: Theoretically we should only do marker detection on one eye, not both,
+					// but I can't get the coordinates to project correctly from one eye to
+					// the other. Doesn't work in the  Unity example either. Maybe
+					// due to camera calibration issues.
+					pOvrAR->SetImageBGRA(ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_RIGHT));
+					pOvrAR->Render();
+					dt = pOvrAR->GetMarkerData();
 					SetCamImage(DIRECTX.Context, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_RIGHT), ovWidth*ovPixelsize);
+				}
 
 				RendererCamPlane(DIRECTX.Device, DIRECTX.Context);
+				for (int i = 0; i < pOvrAR->GetMarkerDataSize(); i++) {
+					//TODO: update experiment model from markers
+					//TODO: Render markers
+					std::cout << "placeholder" << std::endl;
+				}
 		    }
+
+
         }
 
 		// Initialize our single full screen Fov layer.
