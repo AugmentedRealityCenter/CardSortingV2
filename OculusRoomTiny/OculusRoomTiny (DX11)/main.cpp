@@ -292,7 +292,10 @@ static bool MainLoop(bool retryCreate)
 				for (int i = 0; i < pOvrAR->GetMarkerDataSize(); i++) {
 					//TODO: update experiment model from markers
 					//TODO: Render markers
-					roomScene->Models[0]->Pos = DirectX::XMFLOAT3(dt[i].translate.x, dt[i].translate.y, dt[i].translate.z);
+					float mult = 50.0f;
+					roomScene->Models[0]->Pos = DirectX::XMFLOAT3(XMVectorGetByIndex(CombinedPos, 0) + mult*dt[i].translate.x,
+						XMVectorGetByIndex(CombinedPos, 1) + mult*dt[i].translate.y,
+						XMVectorGetByIndex(CombinedPos, 2) - mult*dt[i].translate.z);
 				}
 				roomScene->Render(&prod,1.0,1.0,1.0,1.0,true);
 		    }
