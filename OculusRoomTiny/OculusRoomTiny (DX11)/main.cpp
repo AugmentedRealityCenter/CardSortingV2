@@ -32,7 +32,12 @@ limitations under the License.
 #include "OVR_CAPI_D3D.h"
 
 #include <ovrvision_pro.h>	//Ovrvision SDK
-#include <ovrvision_ar.h>
+//#include <ovrvision_ar.h>
+
+#include <aruco.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 extern int InitializeCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, int w, int h, float zsize);
 extern int RendererCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext);
@@ -40,7 +45,7 @@ extern int SetCamImage(ID3D11DeviceContext* DeviceContext, unsigned char* camIma
 extern int CleanCamPlane();
 
 OVR::OvrvisionPro ovrvision;
-OVR::OvrvisionAR* pOvrAR;
+//OVR::OvrvisionAR* pOvrAR;
 int ovWidth = 0;
 int ovHeight = 0;
 int ovPixelsize = 4;
@@ -208,8 +213,8 @@ static bool MainLoop(bool retryCreate)
 
 		InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight, 1.0f);
 
-		pOvrAR = new OVR::OvrvisionAR(0.025f, ovWidth, ovHeight, ovrvision.GetCamFocalPoint());
-		pOvrAR->SetDetectThreshold(50.0f);
+		//pOvrAR = new OVR::OvrvisionAR(0.025f, ovWidth, ovHeight, ovrvision.GetCamFocalPoint());
+		//pOvrAR->SetDetectThreshold(50.0f);
 	}
 
 	// Main loop
@@ -268,12 +273,20 @@ static bool MainLoop(bool retryCreate)
 			    XMMATRIX prod = XMMatrixMultiply(view, proj);
 			    
 				InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight, 1.0f);
-				OVR::OvMarkerData* dt = NULL;
+				//OVR::OvMarkerData* dt = NULL;
+				
+				aruco::MarkerDetector MDetector;
+				vector<aruco::Marker> Markers;
+
 				//Camera View
 				if (eye == 0) {
-					pOvrAR->SetImageBGRA(ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT));
-					pOvrAR->Render();
-					dt = pOvrAR->GetMarkerData();
+					cv::Mat InImage(ovWidth, ovHeight, CV_8UC3, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT));
+					//cv::Mat grey;
+					//cv::cvtColor(InImage, grey, CV_BGRA2GRAY);
+					//MDetector.detect(InImage, Markers);
+					//pOvrAR->SetImageBGRA(ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT));
+					//pOvrAR->Render();
+					//dt = pOvrAR->GetMarkerData();
 					SetCamImage(DIRECTX.Context, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT), ovWidth*ovPixelsize);
 				}
 				else {
@@ -281,23 +294,25 @@ static bool MainLoop(bool retryCreate)
 					// but I can't get the coordinates to project correctly from one eye to
 					// the other. Doesn't work in the  Unity example either. Maybe
 					// due to camera calibration issues.
-					pOvrAR->SetImageBGRA(ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_RIGHT));
-					pOvrAR->Render();
-					dt = pOvrAR->GetMarkerData();
+					//pOvrAR->SetImageBGRA(ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_RIGHT));
+					//pOvrAR->Render();
+					//dt = pOvrAR->GetMarkerData();
 					SetCamImage(DIRECTX.Context, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_RIGHT), ovWidth*ovPixelsize);
 				}
 
 				RendererCamPlane(DIRECTX.Device, DIRECTX.Context);
 
 				roomScene->Models[0]->Pos = DirectX::XMFLOAT3(1000.0f, 1000.0f, 1000.0f);
-				for (int i = 0; i < pOvrAR->GetMarkerDataSize(); i++) {
+				/*for (int i = 0; i < pOvrAR->GetMarkerDataSize(); i++) {
 					//TODO: update experiment model from markers
 					//TODO: Render markers
 					float mult = 1.0f;
-					roomScene->Models[0]->Pos = DirectX::XMFLOAT3(mult*(dt[i].translate.x+0.032f),
+					roomScene->Models[0]->Pos = DirectX::XMFLOAT3(mult*(dt[i].translate.x),
 						mult*dt[i].translate.y,
 						 -mult*dt[i].translate.z);
-				}
+					roomScene->Models[0]->Rot = DirectX::XMFLOAT4(dt[i].quaternion.x, dt[i].quaternion.y, 
+						dt[i].quaternion.z, dt[i].quaternion.w);
+				}*/
 				roomScene->Render(&prod,1.0,1.0,1.0,1.0,true);
 		    }
 

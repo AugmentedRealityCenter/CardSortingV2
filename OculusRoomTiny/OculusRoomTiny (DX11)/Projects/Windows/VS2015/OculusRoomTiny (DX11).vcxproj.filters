@@ -3,6 +3,17 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\main.cpp" />
     <ClCompile Include="..\..\..\plane.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\markerdetector.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\cameraparameters.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\chromaticmask.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\cvdrawingutils.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\highlyreliablemarkers.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\marker.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\ar_omp.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\arucofidmarkers.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\board.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\boarddetector.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\subpixelcorner.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\OculusRoomTiny_Advanced\Common\Win32_DirectXAppUtil.h" />
