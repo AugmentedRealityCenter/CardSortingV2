@@ -220,7 +220,7 @@ static bool MainLoop(bool retryCreate)
 	{
 		std::vector< int > markerIds;
 		std::vector< std::vector<cv::Point2f> > markerCorners;//, rejectedCandidates;
-															  //cv::Ptr<cv::aruco::DetectorParameters> parameters = new cv::aruco::DetectorParameters(); 
+        //cv::Ptr<cv::aruco::DetectorParameters> parameters = new cv::aruco::DetectorParameters(); 
 		cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_ARUCO_ORIGINAL);
 		cv::Mat grey;
 		grey.create(ovHeight, ovWidth, CV_8UC1);//, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT), );

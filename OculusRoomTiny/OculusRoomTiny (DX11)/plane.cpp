@@ -77,7 +77,7 @@ int InitializeCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext,
 	//Create Vertex Shader 
 	if (FAILED(D3DCompile(g_planeShader, strlen(g_planeShader), NULL, NULL, NULL, "VSFunc", "vs_4_0", 0, 0, &pCompiledShader, 0)))
 	{
-		MessageBox(0, "Vertex Shader Read Error!", NULL, MB_OK);
+		//MessageBox(0, L"Vertex Shader Read Error!", NULL, MB_OK);
 		//MessageBox(0, (LPCWSTR)pErrors->GetBufferPointer(), NULL, MB_OK);
 
 		return E_FAIL;
@@ -87,7 +87,7 @@ int InitializeCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext,
 	if (FAILED(Device->CreateVertexShader(pCompiledShader->GetBufferPointer(), pCompiledShader->GetBufferSize(), NULL, &VertexShader)))
 	{
 		Release(pCompiledShader);
-		MessageBox(0, "Vertex Shader Create Error!", NULL, MB_OK);
+		//MessageBox(0, L"Vertex Shader Create Error!", NULL, MB_OK);
 
 		return E_FAIL;
 	}
@@ -107,7 +107,7 @@ int InitializeCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext,
 	//Create Pixel shader
 	if (FAILED(D3DCompile(g_planeShader, strlen(g_planeShader), NULL, NULL, NULL, "PSFunc", "ps_4_0", 0, 0, &pCompiledShader, 0)))
 	{
-		MessageBox(0, "Pixel Shader Read Error!", NULL, MB_OK);
+		//MessageBox(0, L"Pixel Shader Read Error!", NULL, MB_OK);
 		//MessageBox(0, (LPCWSTR)pErrors->GetBufferPointer(), NULL, MB_OK);
 		return E_FAIL;
 	}
@@ -115,7 +115,7 @@ int InitializeCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext,
 	if (FAILED(Device->CreatePixelShader(pCompiledShader->GetBufferPointer(), pCompiledShader->GetBufferSize(), NULL, &PixelShader)))
 	{
 		Release(pCompiledShader);
-		MessageBox(0, "Pixel Shader Create Error!", NULL, MB_OK);
+		//MessageBox(0, L"Pixel Shader Create Error!", NULL, MB_OK);
 		return E_FAIL;
 	}
 	Release(pCompiledShader);
@@ -175,7 +175,7 @@ int InitializeCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext,
 
 	if (FAILED(Device->CreateTexture2D(&texDesc, NULL, &Texture)))
 	{
-		MessageBox(0, "Failed to create texture buffer", NULL, MB_OK);
+		//MessageBox(0, L"Failed to create texture buffer", NULL, MB_OK);
 		return E_FAIL;
 	}
 
@@ -185,7 +185,7 @@ int InitializeCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext,
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 	if (FAILED(Device->CreateShaderResourceView(Texture, &srvDesc, &ShaderRC))) {
-		MessageBox(0, "Failed to create resource buffer", NULL, MB_OK);
+		//MessageBox(0, L"Failed to create resource buffer", NULL, MB_OK);
 		return E_FAIL;
 	}
 
