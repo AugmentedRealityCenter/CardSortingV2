@@ -26,7 +26,7 @@ limitations under the License.
 #include <iostream>
 
 // Include DirectX
-#include "../../OculusRoomTiny_Advanced/Common/Win32_DirectXAppUtil.h"
+#include "Win32_DirectXAppUtil.h"
 
 // Include the Oculus SDK
 #include "OVR_CAPI_D3D.h"
@@ -162,7 +162,7 @@ bool cardGoesLeft(int cardId, int experimentId) {
 
 /* Scan marker ids to see which experiment we are doing */
 void updateExperiment(std::vector< int > &markerId) {
-	for (int i = 0; i < markerId.size(); i++) {
+	for (unsigned int i = 0; i < markerId.size(); i++) {
 		if (markerId[i] >= 60 && markerId[i] <= 63) {
 			g_currentExperiment = markerId[i];
 		}
@@ -171,7 +171,7 @@ void updateExperiment(std::vector< int > &markerId) {
 
 /* Scan marker ids to see which card we are looking at */
 void updateCard(std::vector< int > &markerId) {
-	for (int i = 0; i < markerId.size(); i++) {
+	for (unsigned int i = 0; i < markerId.size(); i++) {
 		if (markerId[i] < 32) {
 			g_currentCard = markerId[i];
 		}
@@ -188,7 +188,7 @@ void fillMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< int >
 	bool goLeft = cardGoesLeft(g_currentCard, g_currentExperiment);
 
 	float res = 0.01f;
-	for (int i = 0; i < markerIds.size(); i++) {
+	for (unsigned int i = 0; i < markerIds.size(); i++) {
 		if (markerCorners[i].size() > 0) {
 			for (float y = 0.0f; y < 1.0f; y += res) {
 				float left_y = markerCorners[i][0].y*y + markerCorners[i][3].y*(1 - y);
@@ -223,7 +223,6 @@ static bool MainLoop(bool retryCreate)
 	ovrTexture     * mirrorTexture = nullptr;
 	OculusTexture  * pEyeRenderTexture[2] = { nullptr, nullptr };
 	DepthBuffer    * pEyeDepthBuffer[2] = { nullptr, nullptr };
-    Scene          * roomScene = nullptr; 
     Camera         * mainCam = nullptr;
 	D3D11_TEXTURE2D_DESC td = {};
 
@@ -277,9 +276,6 @@ static bool MainLoop(bool retryCreate)
         if (retryCreate) goto Done;
         VALIDATE(false, "Failed to create mirror texture.");
     }
-
-	// Create the room model
-    roomScene = new Scene(false);
 
 	// Create camera
     mainCam = new Camera(&XMVectorSet(0.0f, 0.0f, 0.0f, 0), &XMQuaternionIdentity());
@@ -406,24 +402,7 @@ static bool MainLoop(bool retryCreate)
 						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 					}
 					RendererCamPlane(DIRECTX.Device, DIRECTX.Context);
-
-					XMMATRIX identity = XMMatrixSet(1.0f, 0.0f, 0.0f, 0.0f,
-						0.0f, 1.0f, 0.0f, 0.0f,
-						0.0f, 0.0f, 1.0f, 0.0f,
-						0.0f, 0.0f, 0.0f, 1.0f);
-					roomScene->Models[0]->Pos = DirectX::XMFLOAT3(1000.0f, 1000.0f, 1000.0f);
-					for (int i = 0; i < markerCorners.size(); i++) {
-						//TODO: update experiment model from markers
-						//TODO: Render markers
-						float mult = 1.0f;
-						for (int j = 0; j < markerCorners[i].size(); j++) {
-							roomScene->Models[0]->Pos = DirectX::XMFLOAT3(markerCorners[i][j].x, markerCorners[i][j].y, 5);
-							roomScene->Render(&identity, 1.0, 1.0, 1.0, 1.0, true);
-						}
-					}
 				}
-
-
 			}
 
 			// Initialize our single full screen Fov layer.
@@ -457,7 +436,6 @@ static bool MainLoop(bool retryCreate)
 	// Release resources
 Done:
     delete mainCam;
-    delete roomScene;
 	if (mirrorTexture) ovr_DestroyMirrorTexture(HMD, mirrorTexture);
     for (int eye = 0; eye < 2; ++eye)
     {

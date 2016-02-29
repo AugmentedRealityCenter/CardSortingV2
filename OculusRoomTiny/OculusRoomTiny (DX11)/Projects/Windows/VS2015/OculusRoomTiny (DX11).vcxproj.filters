@@ -5,6 +5,6 @@
     <ClCompile Include="..\..\..\plane.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\OculusRoomTiny_Advanced\Common\Win32_DirectXAppUtil.h" />
+    <ClInclude Include="..\..\..\Win32_DirectXAppUtil.h" />
   </ItemGroup>
 </Project>

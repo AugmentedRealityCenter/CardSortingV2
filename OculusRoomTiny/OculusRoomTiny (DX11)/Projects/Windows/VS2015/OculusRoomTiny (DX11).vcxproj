@@ -23,7 +23,7 @@
     <ClCompile Include="..\..\..\plane.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\OculusRoomTiny_Advanced\Common\Win32_DirectXAppUtil.h" />
+    <ClInclude Include="..\..\..\Win32_DirectXAppUtil.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4D6101BA-A0BE-48E6-992E-19BC74CA69F3}</ProjectGuid>
