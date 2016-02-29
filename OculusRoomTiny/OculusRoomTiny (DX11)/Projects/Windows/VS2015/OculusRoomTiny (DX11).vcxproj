@@ -19,17 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\arucofidmarkers.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\ar_omp.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\board.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\boarddetector.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\cameraparameters.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\chromaticmask.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\cvdrawingutils.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\highlyreliablemarkers.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\marker.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\markerdetector.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\..\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src\subpixelcorner.cpp" />
     <ClCompile Include="..\..\..\main.cpp" />
     <ClCompile Include="..\..\..\plane.cpp" />
   </ItemGroup>
@@ -237,15 +226,15 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <AdditionalIncludeDirectories>C:\Users\brinkmwj.IT\Downloads\opencv\build\include;C:\Users\brinkmwj.IT\Downloads\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src;C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\include;$(OVRSDKROOT)LibOVR/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\brinkmwj.IT\Downloads\opencv_contrib-master\opencv_contrib-master\modules\aruco\include;C:\Users\brinkmwj.IT\Downloads\opencv\build\include;C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\include;$(OVRSDKROOT)LibOVR/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Manifest>
       <EnableDPIAwareness>PerMonitorHighDPIAware</EnableDPIAwareness>
     </Manifest>
     <Link>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
-      <AdditionalDependencies>$(OVRSDKROOT)LibOVR/Lib/Windows/$(Platform)/$(Configuration)/VS2015/LibOVR.lib;ovrvision.lib;opencv_world310d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\brinkmwj.IT\Downloads\opencv\build\x64\vc14\lib;C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\bin\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(OVRSDKROOT)LibOVR/Lib/Windows/$(Platform)/$(Configuration)/VS2015/LibOVR.lib;ovrvision.lib;opencv_aruco310d.lib;opencv_calib3d310d.lib;opencv_core310d.lib;opencv_features2d310d.lib;opencv_flann310d.lib;opencv_highgui310d.lib;opencv_imgcodecs310d.lib;opencv_imgproc310d.lib;opencv_ml310d.lib;opencv_videoio310d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\brinkmwj.IT\Downloads\opencv\build\lib\Debug;C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\bin\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -258,15 +247,15 @@
       <TreatWarningAsError>false</TreatWarningAsError>
       <OmitFramePointers>false</OmitFramePointers>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <AdditionalIncludeDirectories>C:\Users\brinkmwj.IT\Downloads\aruco-1.3.0.tar\aruco-1.3.0\aruco-1.3.0\src;C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\include;C:\Users\brinkmwj.IT\Downloads\opencv\build\include;$(OVRSDKROOT)LibOVR/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\brinkmwj.IT\Downloads\opencv_contrib-master\opencv_contrib-master\modules\aruco\include;C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\include;$(OVRSDKROOT)LibOVR/Include/;C:\Users\brinkmwj.IT\Downloads\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Manifest>
       <EnableDPIAwareness>PerMonitorHighDPIAware</EnableDPIAwareness>
     </Manifest>
     <Link>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
-      <AdditionalDependencies>$(OVRSDKROOT)LibOVR/Lib/Windows/$(Platform)/$(Configuration)/VS2015/LibOVR.lib;opencv_world310d.lib;ovrvision64d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\bin\x64;C:\Users\brinkmwj.IT\Downloads\opencv\build\x64\vc14\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(OVRSDKROOT)LibOVR/Lib/Windows/$(Platform)/$(Configuration)/VS2015/LibOVR.lib;opencv_aruco310d.lib;opencv_calib3d310d.lib;opencv_core310d.lib;opencv_features2d310d.lib;opencv_flann310d.lib;opencv_highgui310d.lib;opencv_imgcodecs310d.lib;opencv_imgproc310d.lib;opencv_ml310d.lib;opencv_videoio310d.lib;ovrvision64d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\bin\x64;C:\Users\brinkmwj.IT\Downloads\opencv\build\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

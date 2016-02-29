@@ -34,7 +34,7 @@ limitations under the License.
 #include <ovrvision_pro.h>	//Ovrvision SDK
 //#include <ovrvision_ar.h>
 
-#include <aruco.h>
+#include <opencv2/aruco.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -217,136 +217,141 @@ static bool MainLoop(bool retryCreate)
 		//pOvrAR->SetDetectThreshold(50.0f);
 	}
 
-	// Main loop
-	while (DIRECTX.HandleMessages())
 	{
-		XMVECTOR forward = XMVector3Rotate(XMVectorSet(0, 0, -0.05f, 0), mainCam->Rot);
-		XMVECTOR right   = XMVector3Rotate(XMVectorSet(0.05f, 0, 0, 0),  mainCam->Rot);
-		if (DIRECTX.Key['W'] || DIRECTX.Key[VK_UP])	  mainCam->Pos = XMVectorAdd(mainCam->Pos, forward);
-		if (DIRECTX.Key['S'] || DIRECTX.Key[VK_DOWN]) mainCam->Pos = XMVectorSubtract(mainCam->Pos, forward);
-		if (DIRECTX.Key['D'])                         mainCam->Pos = XMVectorAdd(mainCam->Pos, right);
-		if (DIRECTX.Key['A'])                         mainCam->Pos = XMVectorSubtract(mainCam->Pos, right);
-		static float Yaw = 0;
-		if (DIRECTX.Key[VK_LEFT])  mainCam->Rot = XMQuaternionRotationRollPitchYaw(0, Yaw += 0.02f, 0);
-		if (DIRECTX.Key[VK_RIGHT]) mainCam->Rot = XMQuaternionRotationRollPitchYaw(0, Yaw -= 0.02f, 0);
+		std::vector< int > markerIds;
+		std::vector< std::vector<cv::Point2f> > markerCorners;//, rejectedCandidates;
+															  //cv::Ptr<cv::aruco::DetectorParameters> parameters = new cv::aruco::DetectorParameters(); 
+		cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_ARUCO_ORIGINAL);
+		cv::Mat grey;
+		grey.create(ovHeight, ovWidth, CV_8UC1);//, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT), );
 
-		// Get both eye poses simultaneously, with IPD offset already included. 
-		ovrPosef         EyeRenderPose[2];
-		ovrVector3f      HmdToEyeViewOffset[2] = { eyeRenderDesc[0].HmdToEyeViewOffset,
-			                                       eyeRenderDesc[1].HmdToEyeViewOffset };
-        double frameTime = ovr_GetPredictedDisplayTime(HMD, 0);
-        // Keeping sensorSampleTime as close to ovr_GetTrackingState as possible - fed into the layer
-        double           sensorSampleTime = ovr_GetTimeInSeconds();
-		ovrTrackingState hmdState = ovr_GetTrackingState(HMD, frameTime, ovrTrue);
-		ovr_CalcEyePoses(hmdState.HeadPose.ThePose, HmdToEyeViewOffset, EyeRenderPose);
-
-		ovrvision.PreStoreCamData(OVR::Camqt::OV_CAMQT_DMSRMP);
-
-		// Render Scene to Eye Buffers
-        if (isVisible)
-        {
-            for (int eye = 0; eye < 2; ++eye)
-		    {
-			    // Increment to use next texture, just before writing
-			    pEyeRenderTexture[eye]->AdvanceToNextTexture();
-
-			    // Clear and set up rendertarget
-			    int texIndex = pEyeRenderTexture[eye]->TextureSet->CurrentIndex;
-			    DIRECTX.SetAndClearRenderTarget(pEyeRenderTexture[eye]->TexRtv[texIndex], pEyeDepthBuffer[eye]);
-			    DIRECTX.SetViewport((float)eyeRenderViewport[eye].Pos.x, (float)eyeRenderViewport[eye].Pos.y,
-				    (float)eyeRenderViewport[eye].Size.w, (float)eyeRenderViewport[eye].Size.h);
-
-			    //Get the pose information in XM format
-			    XMVECTOR eyeQuat = XMVectorSet(EyeRenderPose[eye].Orientation.x, EyeRenderPose[eye].Orientation.y,
-				                               EyeRenderPose[eye].Orientation.z, EyeRenderPose[eye].Orientation.w);
-			    XMVECTOR eyePos = XMVectorSet(EyeRenderPose[eye].Position.x, EyeRenderPose[eye].Position.y, EyeRenderPose[eye].Position.z, 0);
-
-			    // Get view and projection matrices for the Rift camera
-			    XMVECTOR CombinedPos = XMVectorAdd(mainCam->Pos, XMVector3Rotate(eyePos, mainCam->Rot));
-			    Camera finalCam(&CombinedPos, &(XMQuaternionMultiply(eyeQuat,mainCam->Rot)));
-			    XMMATRIX view = finalCam.GetViewMatrix();
-			    ovrMatrix4f p = ovrMatrix4f_Projection(eyeRenderDesc[eye].Fov, 0.2f, 1000.0f, ovrProjection_RightHanded);
-			    XMMATRIX proj = XMMatrixSet(p.M[0][0], p.M[1][0], p.M[2][0], p.M[3][0],
-				                            p.M[0][1], p.M[1][1], p.M[2][1], p.M[3][1],
-				                            p.M[0][2], p.M[1][2], p.M[2][2], p.M[3][2],
-				                            p.M[0][3], p.M[1][3], p.M[2][3], p.M[3][3]);
-			    XMMATRIX prod = XMMatrixMultiply(view, proj);
-			    
-				InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight, 1.0f);
-				//OVR::OvMarkerData* dt = NULL;
-				
-				aruco::MarkerDetector MDetector;
-				vector<aruco::Marker> Markers;
-
-				//Camera View
-				if (eye == 0) {
-					cv::Mat InImage(ovWidth, ovHeight, CV_8UC3, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT));
-					//cv::Mat grey;
-					//cv::cvtColor(InImage, grey, CV_BGRA2GRAY);
-					//MDetector.detect(InImage, Markers);
-					//pOvrAR->SetImageBGRA(ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT));
-					//pOvrAR->Render();
-					//dt = pOvrAR->GetMarkerData();
-					SetCamImage(DIRECTX.Context, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT), ovWidth*ovPixelsize);
-				}
-				else {
-					//TODO: Theoretically we should only do marker detection on one eye, not both,
-					// but I can't get the coordinates to project correctly from one eye to
-					// the other. Doesn't work in the  Unity example either. Maybe
-					// due to camera calibration issues.
-					//pOvrAR->SetImageBGRA(ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_RIGHT));
-					//pOvrAR->Render();
-					//dt = pOvrAR->GetMarkerData();
-					SetCamImage(DIRECTX.Context, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_RIGHT), ovWidth*ovPixelsize);
-				}
-
-				RendererCamPlane(DIRECTX.Device, DIRECTX.Context);
-
-				roomScene->Models[0]->Pos = DirectX::XMFLOAT3(1000.0f, 1000.0f, 1000.0f);
-				/*for (int i = 0; i < pOvrAR->GetMarkerDataSize(); i++) {
-					//TODO: update experiment model from markers
-					//TODO: Render markers
-					float mult = 1.0f;
-					roomScene->Models[0]->Pos = DirectX::XMFLOAT3(mult*(dt[i].translate.x),
-						mult*dt[i].translate.y,
-						 -mult*dt[i].translate.z);
-					roomScene->Models[0]->Rot = DirectX::XMFLOAT4(dt[i].quaternion.x, dt[i].quaternion.y, 
-						dt[i].quaternion.z, dt[i].quaternion.w);
-				}*/
-				roomScene->Render(&prod,1.0,1.0,1.0,1.0,true);
-		    }
-
-
-        }
-
-		// Initialize our single full screen Fov layer.
-        ovrLayerEyeFov ld = {};
-		ld.Header.Type = ovrLayerType_EyeFov;
-		ld.Header.Flags = 0;
-
-		for (int eye = 0; eye < 2; ++eye)
+		// Main loop
+		while (DIRECTX.HandleMessages())
 		{
-			ld.ColorTexture[eye] = pEyeRenderTexture[eye]->TextureSet;
-			ld.Viewport[eye] = eyeRenderViewport[eye];
-			ld.Fov[eye] = hmdDesc.DefaultEyeFov[eye];
-			ld.RenderPose[eye] = EyeRenderPose[eye];
-            ld.SensorSampleTime = sensorSampleTime;
+			XMVECTOR forward = XMVector3Rotate(XMVectorSet(0, 0, -0.05f, 0), mainCam->Rot);
+			XMVECTOR right = XMVector3Rotate(XMVectorSet(0.05f, 0, 0, 0), mainCam->Rot);
+			if (DIRECTX.Key['W'] || DIRECTX.Key[VK_UP])	  mainCam->Pos = XMVectorAdd(mainCam->Pos, forward);
+			if (DIRECTX.Key['S'] || DIRECTX.Key[VK_DOWN]) mainCam->Pos = XMVectorSubtract(mainCam->Pos, forward);
+			if (DIRECTX.Key['D'])                         mainCam->Pos = XMVectorAdd(mainCam->Pos, right);
+			if (DIRECTX.Key['A'])                         mainCam->Pos = XMVectorSubtract(mainCam->Pos, right);
+			static float Yaw = 0;
+			if (DIRECTX.Key[VK_LEFT])  mainCam->Rot = XMQuaternionRotationRollPitchYaw(0, Yaw += 0.02f, 0);
+			if (DIRECTX.Key[VK_RIGHT]) mainCam->Rot = XMQuaternionRotationRollPitchYaw(0, Yaw -= 0.02f, 0);
+
+			// Get both eye poses simultaneously, with IPD offset already included. 
+			ovrPosef         EyeRenderPose[2];
+			ovrVector3f      HmdToEyeViewOffset[2] = { eyeRenderDesc[0].HmdToEyeViewOffset,
+													   eyeRenderDesc[1].HmdToEyeViewOffset };
+			double frameTime = ovr_GetPredictedDisplayTime(HMD, 0);
+			// Keeping sensorSampleTime as close to ovr_GetTrackingState as possible - fed into the layer
+			double           sensorSampleTime = ovr_GetTimeInSeconds();
+			ovrTrackingState hmdState = ovr_GetTrackingState(HMD, frameTime, ovrTrue);
+			ovr_CalcEyePoses(hmdState.HeadPose.ThePose, HmdToEyeViewOffset, EyeRenderPose);
+
+			ovrvision.PreStoreCamData(OVR::Camqt::OV_CAMQT_DMSRMP);
+
+			// Render Scene to Eye Buffers
+			if (isVisible)
+			{
+				for (int eye = 0; eye < 2; ++eye)
+				{
+					// Increment to use next texture, just before writing
+					pEyeRenderTexture[eye]->AdvanceToNextTexture();
+
+					// Clear and set up rendertarget
+					int texIndex = pEyeRenderTexture[eye]->TextureSet->CurrentIndex;
+					DIRECTX.SetAndClearRenderTarget(pEyeRenderTexture[eye]->TexRtv[texIndex], pEyeDepthBuffer[eye]);
+					DIRECTX.SetViewport((float)eyeRenderViewport[eye].Pos.x, (float)eyeRenderViewport[eye].Pos.y,
+						(float)eyeRenderViewport[eye].Size.w, (float)eyeRenderViewport[eye].Size.h);
+
+					//Get the pose information in XM format
+					XMVECTOR eyeQuat = XMVectorSet(EyeRenderPose[eye].Orientation.x, EyeRenderPose[eye].Orientation.y,
+						EyeRenderPose[eye].Orientation.z, EyeRenderPose[eye].Orientation.w);
+					XMVECTOR eyePos = XMVectorSet(EyeRenderPose[eye].Position.x, EyeRenderPose[eye].Position.y, EyeRenderPose[eye].Position.z, 0);
+
+					// Get view and projection matrices for the Rift camera
+					XMVECTOR CombinedPos = XMVectorAdd(mainCam->Pos, XMVector3Rotate(eyePos, mainCam->Rot));
+					Camera finalCam(&CombinedPos, &(XMQuaternionMultiply(eyeQuat, mainCam->Rot)));
+					XMMATRIX view = finalCam.GetViewMatrix();
+					ovrMatrix4f p = ovrMatrix4f_Projection(eyeRenderDesc[eye].Fov, 0.2f, 1000.0f, ovrProjection_RightHanded);
+					XMMATRIX proj = XMMatrixSet(p.M[0][0], p.M[1][0], p.M[2][0], p.M[3][0],
+						p.M[0][1], p.M[1][1], p.M[2][1], p.M[3][1],
+						p.M[0][2], p.M[1][2], p.M[2][2], p.M[3][2],
+						p.M[0][3], p.M[1][3], p.M[2][3], p.M[3][3]);
+					XMMATRIX prod = XMMatrixMultiply(view, proj);
+
+					InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight, 1.0f);
+
+					//Camera View
+					if (eye == 0) {
+						unsigned char* p = ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT);
+						//Convert to greyscale
+						for (int i = 0; i < ovWidth*ovHeight; i++) {
+							unsigned char average = (((int)p[4 * i] + (int)p[4 * i + 1] + (int)p[4 * i + 2]) / 3);
+							grey.data[i] = average;
+						}
+						cv::aruco::detectMarkers(grey, dictionary, markerCorners, markerIds);//, parameters, rejectedCandidates);
+
+						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
+					}
+					else {
+						unsigned char* p = ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_RIGHT);
+						//Convert to greyscale
+						for (int i = 0; i < ovWidth*ovHeight; i++) {
+							unsigned char average = (((int)p[4 * i] + (int)p[4 * i + 1] + (int)p[4 * i + 2]) / 3);
+							grey.data[i] = average;
+						}
+						cv::aruco::detectMarkers(grey, dictionary, markerCorners, markerIds);//, parameters, rejectedCandidates);
+
+						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
+					}
+					RendererCamPlane(DIRECTX.Device, DIRECTX.Context);
+
+					roomScene->Models[0]->Pos = DirectX::XMFLOAT3(1000.0f, 1000.0f, 1000.0f);
+					/*for (int i = 0; i < pOvrAR->GetMarkerDataSize(); i++) {
+						//TODO: update experiment model from markers
+						//TODO: Render markers
+						float mult = 1.0f;
+						roomScene->Models[0]->Pos = DirectX::XMFLOAT3(mult*(dt[i].translate.x),
+							mult*dt[i].translate.y,
+							 -mult*dt[i].translate.z);
+						roomScene->Models[0]->Rot = DirectX::XMFLOAT4(dt[i].quaternion.x, dt[i].quaternion.y,
+							dt[i].quaternion.z, dt[i].quaternion.w);
+					}*/
+					roomScene->Render(&prod, 1.0, 1.0, 1.0, 1.0, true);
+				}
+
+
+			}
+
+			// Initialize our single full screen Fov layer.
+			ovrLayerEyeFov ld = {};
+			ld.Header.Type = ovrLayerType_EyeFov;
+			ld.Header.Flags = 0;
+
+			for (int eye = 0; eye < 2; ++eye)
+			{
+				ld.ColorTexture[eye] = pEyeRenderTexture[eye]->TextureSet;
+				ld.Viewport[eye] = eyeRenderViewport[eye];
+				ld.Fov[eye] = hmdDesc.DefaultEyeFov[eye];
+				ld.RenderPose[eye] = EyeRenderPose[eye];
+				ld.SensorSampleTime = sensorSampleTime;
+			}
+
+			ovrLayerHeader* layers = &ld.Header;
+			result = ovr_SubmitFrame(HMD, 0, nullptr, &layers, 1);
+			// exit the rendering loop if submit returns an error, will retry on ovrError_DisplayLost
+			if (!OVR_SUCCESS(result))
+				goto Done;
+
+			isVisible = (result == ovrSuccess);
+
+			// Render mirror
+			ovrD3D11Texture* tex = (ovrD3D11Texture*)mirrorTexture;
+			DIRECTX.Context->CopyResource(DIRECTX.BackBuffer, tex->D3D11.pTexture);
+			DIRECTX.SwapChain->Present(0, 0);
 		}
-
-        ovrLayerHeader* layers = &ld.Header;
-        result = ovr_SubmitFrame(HMD, 0, nullptr, &layers, 1);
-        // exit the rendering loop if submit returns an error, will retry on ovrError_DisplayLost
-        if (!OVR_SUCCESS(result))
-            goto Done;
-
-        isVisible = (result == ovrSuccess);
-
-        // Render mirror
-        ovrD3D11Texture* tex = (ovrD3D11Texture*)mirrorTexture;
-        DIRECTX.Context->CopyResource(DIRECTX.BackBuffer, tex->D3D11.pTexture);
-        DIRECTX.SwapChain->Present(0, 0);
 	}
-
 	// Release resources
 Done:
     delete mainCam;
