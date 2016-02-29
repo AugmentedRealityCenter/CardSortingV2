@@ -169,50 +169,77 @@ void updateExperiment(std::vector< int > &markerId) {
 	}
 }
 
-/* Scan marker ids to see which card we are looking at */
-void updateCard(std::vector< int > &markerId) {
+/* Scan marker ids to see which card we are looking at.
+ * Return the index where the card was found, for use in lookup into markerCorners */
+int updateCard(std::vector< int > &markerId) {
+	int index = -1;
 	for (unsigned int i = 0; i < markerId.size(); i++) {
 		if (markerId[i] < 32) {
 			g_currentCard = markerId[i];
+			index = i;
 		}
 	}
+
+	return index;
 }
 
-void updateExperimentInfo(std::vector< int > &markerIds) {
-	updateExperiment(markerIds);
-	updateCard(markerIds);
+std::pair<int, int> findBoxes(std::vector< int > &markerId) {
+	int left_index = -1;
+	int right_index = -1;
+	for (unsigned int i = 0; i < markerId.size(); i++) {
+		if (markerId[i] == LEFT_BOX_ID) {
+			left_index = i;
+		}
+		if (markerId[i] == RIGHT_BOX_ID) {
+			right_index = i;
+		}
+	}
+
+	return std::make_pair(left_index, right_index);
 }
 
-void fillMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< int > &markerIds, std::vector< std::vector<cv::Point2f> > &markerCorners) {
-	updateExperimentInfo(markerIds); //I'm a bad person. TODO: Change name of fillMarkers to something more accurate
+void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< int > &markerIds, std::vector< std::vector<cv::Point2f> > &markerCorners) {
+	updateExperiment(markerIds); //Switch experiments, if necessary
+	int cardIndex = updateCard(markerIds); //Switch currentCard, if necessary, and get index for rendering
+	std::pair<int, int> boxIndices = findBoxes(markerIds);
+
+	//Check which way the current card should go
 	bool goLeft = cardGoesLeft(g_currentCard, g_currentExperiment);
 
-	float res = 0.01f;
-	for (unsigned int i = 0; i < markerIds.size(); i++) {
-		if (markerCorners[i].size() > 0) {
-			for (float y = 0.0f; y < 1.0f; y += res) {
-				float left_y = markerCorners[i][0].y*y + markerCorners[i][3].y*(1 - y);
-				float left_x = markerCorners[i][0].x*y + markerCorners[i][3].x*(1 - y);
-				float right_y = markerCorners[i][1].y*y + markerCorners[i][2].y*(1 - y);
-				float right_x = markerCorners[i][1].x*y + markerCorners[i][2].x*(1 - y);
-				for (float x = 0.0f; x < 1.0f; x += res) {
-					float my_y = left_y*x + right_y*(1 - x);
-					float my_x = left_x*x + right_x*(1 - x);
-					int index = 4 * ((int)my_x + ovWidth*(int)my_y);
-					if (goLeft) {
-						p[index] = 0;
-						p[index + 1] = 0;
-						p[index + 2] = 255;
-					}
-					else {
-						p[index] = 0;
-						p[index + 1] = 255;
-						p[index + 2] = 0;
+	if (g_visType == VIS_ARROWS_ON_CARD && cardIndex != -1) {
+		float res = 0.01f;
+		for (unsigned int i = 0; i < markerIds.size(); i++) {
+			if (markerCorners[i].size() > 0) {
+				for (float y = 0.0f; y < 1.0f; y += res) {
+					float left_y = markerCorners[i][0].y*y + markerCorners[i][3].y*(1 - y);
+					float left_x = markerCorners[i][0].x*y + markerCorners[i][3].x*(1 - y);
+					float right_y = markerCorners[i][1].y*y + markerCorners[i][2].y*(1 - y);
+					float right_x = markerCorners[i][1].x*y + markerCorners[i][2].x*(1 - y);
+					for (float x = 0.0f; x < 1.0f; x += res) {
+						float my_y = left_y*x + right_y*(1 - x);
+						float my_x = left_x*x + right_x*(1 - x);
+						int index = 4 * ((int)my_x + ovWidth*(int)my_y);
+						if (goLeft) {
+							p[index] = 0;
+							p[index + 1] = 0;
+							p[index + 2] = 255;
+						}
+						else {
+							p[index] = 0;
+							p[index + 1] = 255;
+							p[index + 2] = 0;
+						}
 					}
 				}
-			}
 
+			}
 		}
+	}
+	else if (g_visType == VIS_ARROWS_ON_BOX && ((goLeft && boxIndices.first != -1) || (!goLeft && boxIndices.second != -1))) {
+
+	}
+	else if (g_visType == VIS_REASONING_ON_CARD && cardIndex != -1) {
+
 	}
 }
 
@@ -384,7 +411,7 @@ static bool MainLoop(bool retryCreate)
 						}
 						cv::aruco::detectMarkers(grey, dictionary, markerCorners, markerIds);//, parameters, rejectedCandidates);
 
-						fillMarkers(p, ovWidth, ovHeight, markerIds, markerCorners);
+						processMarkers(p, ovWidth, ovHeight, markerIds, markerCorners);
 
 						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 					}
@@ -397,7 +424,7 @@ static bool MainLoop(bool retryCreate)
 						}
 						cv::aruco::detectMarkers(grey, dictionary, markerCorners, markerIds);//, parameters, rejectedCandidates);
 
-						fillMarkers(p, ovWidth, ovHeight, markerIds, markerCorners);
+						processMarkers(p, ovWidth, ovHeight, markerIds, markerCorners);
 
 						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 					}
