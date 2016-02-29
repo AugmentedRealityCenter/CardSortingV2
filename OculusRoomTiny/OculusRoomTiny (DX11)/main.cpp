@@ -120,7 +120,73 @@ struct OculusTexture
 	}
 };
 
+#define VIS_ARROWS_ON_CARD 0
+#define VIS_REASONING_ON_CARD 1
+#define VIS_ARROWS_ON_BOX 2
+
+#define SUIT_SPADE 0
+#define SUIT_HEART 1
+#define SUIT_CLUB 2
+#define SUIT_DIAMOND 3
+
+#define EXP_1_ID 63
+#define EXP_2_ID 62
+#define EXP_3_ID 61
+#define EXP_4_ID 60
+
+#define LEFT_BOX_ID 59
+#define RIGHT_BOX_ID 58
+
+int g_currentExperiment = EXP_1_ID;
+int g_currentCard = 0; //2 of spades
+int g_visType = VIS_ARROWS_ON_CARD;
+
+bool cardGoesLeft(int cardId, int experimentId) {
+	int cardNum = (cardId % 8) + 2; //2-9 of each suit
+	int suit = cardId / 8;
+
+	switch (experimentId) {
+	case 63:
+	default:
+		//Left: Odd heart and spade, even space and diamond
+		//Right: Odd club and diamond, even heart and club
+		return (cardNum % 2 == 1 && (suit == SUIT_HEART || suit == SUIT_SPADE)) ||
+			(cardNum % 2 == 0 && (suit == SUIT_CLUB || suit == SUIT_DIAMOND));
+	case 62:
+		//Left: Heart and Spade Odd, or Club and Diamond 2-5
+		return (cardNum % 2 == 1 && (suit == SUIT_HEART || suit == SUIT_SPADE)) ||
+			(cardNum <= 5 && (suit == SUIT_CLUB || suit == SUIT_DIAMOND));
+		//TODO: Case 61 and case 60
+	}
+}
+
+/* Scan marker ids to see which experiment we are doing */
+void updateExperiment(std::vector< int > &markerId) {
+	for (int i = 0; i < markerId.size(); i++) {
+		if (markerId[i] >= 60 && markerId[i] <= 63) {
+			g_currentExperiment = markerId[i];
+		}
+	}
+}
+
+/* Scan marker ids to see which card we are looking at */
+void updateCard(std::vector< int > &markerId) {
+	for (int i = 0; i < markerId.size(); i++) {
+		if (markerId[i] < 32) {
+			g_currentCard = markerId[i];
+		}
+	}
+}
+
+void updateExperimentInfo(std::vector< int > &markerIds) {
+	updateExperiment(markerIds);
+	updateCard(markerIds);
+}
+
 void fillMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< int > &markerIds, std::vector< std::vector<cv::Point2f> > &markerCorners) {
+	updateExperimentInfo(markerIds); //I'm a bad person. TODO: Change name of fillMarkers to something more accurate
+	bool goLeft = cardGoesLeft(g_currentCard, g_currentExperiment);
+
 	float res = 0.01f;
 	for (int i = 0; i < markerIds.size(); i++) {
 		if (markerCorners[i].size() > 0) {
@@ -133,9 +199,16 @@ void fillMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< int >
 					float my_y = left_y*x + right_y*(1 - x);
 					float my_x = left_x*x + right_x*(1 - x);
 					int index = 4 * ((int)my_x + ovWidth*(int)my_y);
-					p[index] = 0;
-					p[index + 1] = 0;
-					p[index + 2] = 255;
+					if (goLeft) {
+						p[index] = 0;
+						p[index + 1] = 0;
+						p[index + 2] = 255;
+					}
+					else {
+						p[index] = 0;
+						p[index + 1] = 255;
+						p[index + 2] = 0;
+					}
 				}
 			}
 
