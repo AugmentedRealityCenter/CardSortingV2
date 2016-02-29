@@ -120,6 +120,29 @@ struct OculusTexture
 	}
 };
 
+void fillMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< int > &markerIds, std::vector< std::vector<cv::Point2f> > &markerCorners) {
+	float res = 0.01f;
+	for (int i = 0; i < markerIds.size(); i++) {
+		if (markerCorners[i].size() > 0) {
+			for (float y = 0.0f; y < 1.0f; y += res) {
+				float left_y = markerCorners[i][0].y*y + markerCorners[i][3].y*(1 - y);
+				float left_x = markerCorners[i][0].x*y + markerCorners[i][3].x*(1 - y);
+				float right_y = markerCorners[i][1].y*y + markerCorners[i][2].y*(1 - y);
+				float right_x = markerCorners[i][1].x*y + markerCorners[i][2].x*(1 - y);
+				for (float x = 0.0f; x < 1.0f; x += res) {
+					float my_y = left_y*x + right_y*(1 - x);
+					float my_x = left_x*x + right_x*(1 - x);
+					int index = 4 * ((int)my_x + ovWidth*(int)my_y);
+					p[index] = 0;
+					p[index + 1] = 0;
+					p[index + 2] = 255;
+				}
+			}
+
+		}
+	}
+}
+
 // return true to retry later (e.g. after display lost)
 static bool MainLoop(bool retryCreate)
 {
@@ -292,6 +315,8 @@ static bool MainLoop(bool retryCreate)
 						}
 						cv::aruco::detectMarkers(grey, dictionary, markerCorners, markerIds);//, parameters, rejectedCandidates);
 
+						fillMarkers(p, ovWidth, ovHeight, markerIds, markerCorners);
+
 						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 					}
 					else {
@@ -303,22 +328,26 @@ static bool MainLoop(bool retryCreate)
 						}
 						cv::aruco::detectMarkers(grey, dictionary, markerCorners, markerIds);//, parameters, rejectedCandidates);
 
+						fillMarkers(p, ovWidth, ovHeight, markerIds, markerCorners);
+
 						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 					}
 					RendererCamPlane(DIRECTX.Device, DIRECTX.Context);
 
+					XMMATRIX identity = XMMatrixSet(1.0f, 0.0f, 0.0f, 0.0f,
+						0.0f, 1.0f, 0.0f, 0.0f,
+						0.0f, 0.0f, 1.0f, 0.0f,
+						0.0f, 0.0f, 0.0f, 1.0f);
 					roomScene->Models[0]->Pos = DirectX::XMFLOAT3(1000.0f, 1000.0f, 1000.0f);
-					/*for (int i = 0; i < pOvrAR->GetMarkerDataSize(); i++) {
+					for (int i = 0; i < markerCorners.size(); i++) {
 						//TODO: update experiment model from markers
 						//TODO: Render markers
 						float mult = 1.0f;
-						roomScene->Models[0]->Pos = DirectX::XMFLOAT3(mult*(dt[i].translate.x),
-							mult*dt[i].translate.y,
-							 -mult*dt[i].translate.z);
-						roomScene->Models[0]->Rot = DirectX::XMFLOAT4(dt[i].quaternion.x, dt[i].quaternion.y,
-							dt[i].quaternion.z, dt[i].quaternion.w);
-					}*/
-					roomScene->Render(&prod, 1.0, 1.0, 1.0, 1.0, true);
+						for (int j = 0; j < markerCorners[i].size(); j++) {
+							roomScene->Models[0]->Pos = DirectX::XMFLOAT3(markerCorners[i][j].x, markerCorners[i][j].y, 5);
+							roomScene->Render(&identity, 1.0, 1.0, 1.0, 1.0, true);
+						}
+					}
 				}
 
 
