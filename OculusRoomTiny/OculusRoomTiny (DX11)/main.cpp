@@ -215,10 +215,12 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat source, int ovWidth, int
 				float my_y = left_y*x + right_y*(1 - x);
 				float my_x = left_x*x + right_x*(1 - x);
 				int index = 4 * ((int)my_x + ovWidth*(int)my_y);
-
-				target[index] = 0;
-				target[index + 1] = 0;
-				target[index + 2] = 255;
+				int src_x = (int)(source.cols*x);
+				int src_y = (int)(source.rows*y);
+				int src_index = 3*(src_x + src_y*source.cols);
+				for (int offset = 0; offset < 4; offset++) {
+					target[index + offset] = source.data[src_index + offset];
+				}
 			}
 		}
 	}
