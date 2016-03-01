@@ -202,6 +202,28 @@ std::pair<int, int> findBoxes(std::vector< int > &markerId) {
 	return std::make_pair(left_index, right_index);
 }
 
+void fillMarkerWithImage(unsigned char* target, cv::Mat source, int ovWidth, int ovHeight, std::vector<cv::Point2f> &corners) {
+	float res = 0.01f;
+	if (corners.size() >= 4) {
+		for (float y = 0.0f; y < 1.0f; y += res) {
+			float left_y = corners[0].y*y + corners[3].y*(1 - y);
+			float left_x = corners[0].x*y + corners[3].x*(1 - y);
+			float right_y = corners[1].y*y + corners[2].y*(1 - y);
+			float right_x = corners[1].x*y + corners[2].x*(1 - y);
+
+			for (float x = 0.0f; x < 1.0f; x += res) {
+				float my_y = left_y*x + right_y*(1 - x);
+				float my_x = left_x*x + right_x*(1 - x);
+				int index = 4 * ((int)my_x + ovWidth*(int)my_y);
+
+				target[index] = 0;
+				target[index + 1] = 0;
+				target[index + 2] = 255;
+			}
+		}
+	}
+}
+
 void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< int > &markerIds, std::vector< std::vector<cv::Point2f> > &markerCorners) {
 	updateExperiment(markerIds); //Switch experiments, if necessary
 	int cardIndex = updateCard(markerIds); //Switch currentCard, if necessary, and get index for rendering
@@ -211,33 +233,7 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 	bool goLeft = cardGoesLeft(g_currentCard, g_currentExperiment);
 
 	if (g_visType == VIS_ARROWS_ON_CARD && cardIndex != -1) {
-		float res = 0.01f;
-		for (unsigned int i = 0; i < markerIds.size(); i++) {
-			if (markerCorners[i].size() > 0) {
-				for (float y = 0.0f; y < 1.0f; y += res) {
-					float left_y = markerCorners[i][0].y*y + markerCorners[i][3].y*(1 - y);
-					float left_x = markerCorners[i][0].x*y + markerCorners[i][3].x*(1 - y);
-					float right_y = markerCorners[i][1].y*y + markerCorners[i][2].y*(1 - y);
-					float right_x = markerCorners[i][1].x*y + markerCorners[i][2].x*(1 - y);
-					for (float x = 0.0f; x < 1.0f; x += res) {
-						float my_y = left_y*x + right_y*(1 - x);
-						float my_x = left_x*x + right_x*(1 - x);
-						int index = 4 * ((int)my_x + ovWidth*(int)my_y);
-						if (goLeft) {
-							p[index] = 0;
-							p[index + 1] = 0;
-							p[index + 2] = 255;
-						}
-						else {
-							p[index] = 0;
-							p[index + 1] = 255;
-							p[index + 2] = 0;
-						}
-					}
-				}
-
-			}
-		}
+		fillMarkerWithImage(p, goLeft ? img_left : img_right, ovWidth, ovHeight, markerCorners[cardIndex]);
 	}
 	else if (g_visType == VIS_ARROWS_ON_BOX && ((goLeft && boxIndices.first != -1) || (!goLeft && boxIndices.second != -1))) {
 
