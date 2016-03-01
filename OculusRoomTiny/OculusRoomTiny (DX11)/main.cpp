@@ -203,8 +203,12 @@ std::pair<int, int> findBoxes(std::vector< int > &markerId) {
 }
 
 void fillMarkerWithImage(unsigned char* target, cv::Mat source, int ovWidth, int ovHeight, std::vector<cv::Point2f> &corners) {
-	float res = 0.01f;
 	if (corners.size() >= 4) {
+		float diagDist = cv::sqrt((corners[0].x - corners[2].x)*(corners[0].x - corners[2].x) +
+			(corners[0].y - corners[2].y)*(corners[0].y - corners[2].y));
+		
+		float res = 1.0f/diagDist;
+
 		for (float y = 0.0f; y < 1.0f; y += res) {
 			float left_y = corners[0].y*y + corners[3].y*(1 - y);
 			float left_x = corners[0].x*y + corners[3].x*(1 - y);
