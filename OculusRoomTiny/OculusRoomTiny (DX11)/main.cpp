@@ -50,6 +50,10 @@ int ovWidth = 0;
 int ovHeight = 0;
 int ovPixelsize = 4;
 
+cv::Mat img_left;
+cv::Mat img_right;
+cv::Mat img_up;
+
 //------------------------------------------------------------
 // ovrSwapTextureSet wrapper class that also maintains the render target views
 // needed for D3D11 rendering.
@@ -331,10 +335,11 @@ static bool MainLoop(bool retryCreate)
 		ovrvision.SetCameraSyncMode(false);
 
 		InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight, 1.0f);
-
-		//pOvrAR = new OVR::OvrvisionAR(0.025f, ovWidth, ovHeight, ovrvision.GetCamFocalPoint());
-		//pOvrAR->SetDetectThreshold(50.0f);
 	}
+
+	img_left = cv::imread("left.png", CV_LOAD_IMAGE_COLOR);
+	img_right = cv::imread("right.png", CV_LOAD_IMAGE_COLOR);
+	img_up = cv::imread("up.png", CV_LOAD_IMAGE_COLOR);
 
 	{
 		std::vector< int > markerIds;
