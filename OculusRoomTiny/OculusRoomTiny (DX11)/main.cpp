@@ -153,14 +153,23 @@ bool cardGoesLeft(int cardId, int experimentId) {
 	case 63:
 	default:
 		//Left: Odd heart and spade, even space and diamond
-		//Right: Odd club and diamond, even heart and club
 		return (cardNum % 2 == 1 && (suit == SUIT_HEART || suit == SUIT_SPADE)) ||
-			(cardNum % 2 == 0 && (suit == SUIT_CLUB || suit == SUIT_DIAMOND));
+			(cardNum % 2 == 0 && (suit == SUIT_SPADE || suit == SUIT_DIAMOND));
+
 	case 62:
 		//Left: Heart and Spade Odd, or Club and Diamond 2-5
 		return (cardNum % 2 == 1 && (suit == SUIT_HEART || suit == SUIT_SPADE)) ||
 			(cardNum <= 5 && (suit == SUIT_CLUB || suit == SUIT_DIAMOND));
-		//TODO: Case 61 and case 60
+
+	case 61:
+		//Left: Odd 2-5, or Even heart or club
+		return (cardNum % 2 == 1 && cardNum <= 5) ||
+			(cardNum % 2 == 0 && (suit == SUIT_HEART || suit == SUIT_CLUB));
+
+	case 60:
+		//Left: 2-5 diamon and club, or 6-9 even
+		return (cardNum <= 5 && (suit == SUIT_DIAMOND || suit == SUIT_CLUB)) ||
+			(cardNum >= 6 && cardNum % 2 == 0);
 	}
 }
 
@@ -290,6 +299,10 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 		for (int i = 0; i < numRots; i++) {
 			rotateCorners(rotatedCorners);
 		}
+		//Rotate twice, because I put the images on the markers the wrong way up.
+		rotateCorners(rotatedCorners);
+		rotateCorners(rotatedCorners);
+		
 		if (g_visType == VIS_ARROWS_ON_CARD) {
 			fillMarkerWithImage(p, goLeft ? img_left : img_right, ovWidth, ovHeight, rotatedCorners);
 		}
