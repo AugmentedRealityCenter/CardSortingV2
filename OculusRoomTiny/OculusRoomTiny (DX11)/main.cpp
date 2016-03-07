@@ -239,7 +239,27 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 	bool goLeft = cardGoesLeft(g_currentCard, g_currentExperiment);
 
 	if (g_visType == VIS_ARROWS_ON_CARD && cardIndex != -1) {
-		fillMarkerWithImage(p, goLeft ? img_left : img_right, ovWidth, ovHeight, markerCorners[cardIndex]);
+		std::vector<cv::Point2f> rotatedCorners = markerCorners[cardIndex];
+
+		int mostLeftPt = 0;
+		for (int i = 1; i < 4; i++) {
+			if (rotatedCorners[i].x < rotatedCorners[mostLeftPt].x) {
+				mostLeftPt = i;
+			}
+		}
+		float distUp = rotatedCorners[mostLeftPt].y - rotatedCorners[(mostLeftPt + 1) % 4].y;
+		float distDown = rotatedCorners[(mostLeftPt + 3) % 4].y - rotatedCorners[mostLeftPt].y;
+		int numRots = distUp < distDown ? mostLeftPt : (mostLeftPt+1)%4;
+		
+		//If they have the card rotated, keep the arrow pointing the right way
+		for (int i = 0; i < numRots; i++) {
+			cv::Point2f t = rotatedCorners[0];
+			for (int j = 0;j < 3;j++) {
+				rotatedCorners[j] = rotatedCorners[j + 1];
+			}
+			rotatedCorners[3] = t;
+		}
+		fillMarkerWithImage(p, goLeft ? img_left : img_right, ovWidth, ovHeight, rotatedCorners);
 	}
 	else if (g_visType == VIS_ARROWS_ON_BOX && ((goLeft && boxIndices.first != -1) || (!goLeft && boxIndices.second != -1))) {
 
