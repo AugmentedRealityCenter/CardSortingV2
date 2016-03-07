@@ -138,8 +138,8 @@ struct OculusTexture
 #define EXP_3_ID 61
 #define EXP_4_ID 60
 
-#define LEFT_BOX_ID 59
-#define RIGHT_BOX_ID 58
+#define LEFT_BOX_ID 58
+#define RIGHT_BOX_ID 59
 
 int g_currentExperiment = EXP_1_ID;
 int g_currentCard = 0; //2 of spades
@@ -173,12 +173,39 @@ void updateExperiment(std::vector< int > &markerId) {
 	}
 }
 
+float dist(cv::Point2f pt1, cv::Point2f pt2) {
+	cv::Point2f diff = pt1 - pt2;
+	return sqrt(diff.x*diff.x + diff.y*diff.y);
+}
+
+float markerAreaApprox(std::vector< cv::Point2f > markerCorners) {
+	float distx = dist(markerCorners[0], markerCorners[1]);
+	float disty = dist(markerCorners[0], markerCorners[3]);
+	return distx*disty;
+}
+
+float markerEccentricity(std::vector< cv::Point2f > markerCorners) {
+	float distx = dist(markerCorners[0], markerCorners[1]);
+	float disty = dist(markerCorners[0], markerCorners[3]);
+	float eccentricity = 0;
+	if (disty > 0) {
+		eccentricity = distx / disty;
+	}
+	if (eccentricity > 1.0f) {
+		eccentricity = 1.0f / eccentricity;
+	}
+	return eccentricity;
+}
+
 /* Scan marker ids to see which card we are looking at.
  * Return the index where the card was found, for use in lookup into markerCorners */
-int updateCard(std::vector< int > &markerId) {
+int updateCard(std::vector< int > &markerId, std::vector< std::vector<cv::Point2f> > &markerCorners) {
 	int index = -1;
 	for (unsigned int i = 0; i < markerId.size(); i++) {
-		if (markerId[i] < 32) {
+		float mArea = markerAreaApprox(markerCorners[i]);
+		float mEccentricity = markerEccentricity(markerCorners[i]);
+
+		if (markerId[i] < 32 &&  mEccentricity > 0.5 && mArea > 250.0f && mArea < 7500.0f) {
 			g_currentCard = markerId[i];
 			index = i;
 		}
@@ -230,15 +257,23 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat source, int ovWidth, int
 	}
 }
 
+void rotateCorners(std::vector<cv::Point2f> &rotatedCorners) {
+	cv::Point2f t = rotatedCorners[0];
+	for (int j = 0;j < 3;j++) {
+		rotatedCorners[j] = rotatedCorners[j + 1];
+	}
+	rotatedCorners[3] = t;
+}
+
 void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< int > &markerIds, std::vector< std::vector<cv::Point2f> > &markerCorners) {
 	updateExperiment(markerIds); //Switch experiments, if necessary
-	int cardIndex = updateCard(markerIds); //Switch currentCard, if necessary, and get index for rendering
+	int cardIndex = updateCard(markerIds, markerCorners); //Switch currentCard, if necessary, and get index for rendering
 	std::pair<int, int> boxIndices = findBoxes(markerIds);
 
 	//Check which way the current card should go
 	bool goLeft = cardGoesLeft(g_currentCard, g_currentExperiment);
 
-	if (g_visType == VIS_ARROWS_ON_CARD && cardIndex != -1) {
+	if ((g_visType == VIS_ARROWS_ON_CARD || g_visType == VIS_REASONING_ON_CARD) && cardIndex != -1) {
 		std::vector<cv::Point2f> rotatedCorners = markerCorners[cardIndex];
 
 		int mostLeftPt = 0;
@@ -253,19 +288,24 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 		
 		//If they have the card rotated, keep the arrow pointing the right way
 		for (int i = 0; i < numRots; i++) {
-			cv::Point2f t = rotatedCorners[0];
-			for (int j = 0;j < 3;j++) {
-				rotatedCorners[j] = rotatedCorners[j + 1];
-			}
-			rotatedCorners[3] = t;
+			rotateCorners(rotatedCorners);
 		}
-		fillMarkerWithImage(p, goLeft ? img_left : img_right, ovWidth, ovHeight, rotatedCorners);
+		if (g_visType == VIS_ARROWS_ON_CARD) {
+			fillMarkerWithImage(p, goLeft ? img_left : img_right, ovWidth, ovHeight, rotatedCorners);
+		}
+		else {
+			//Fill with instructive image
+		}
 	}
 	else if (g_visType == VIS_ARROWS_ON_BOX && ((goLeft && boxIndices.first != -1) || (!goLeft && boxIndices.second != -1))) {
+		int index = goLeft ? boxIndices.first : boxIndices.second;
+		std::vector<cv::Point2f> rotatedCorners = markerCorners[index];
+		
+		//Rotate twice, because I put the images on the markers the wrong way up.
+		rotateCorners(rotatedCorners);
+		rotateCorners(rotatedCorners);
 
-	}
-	else if (g_visType == VIS_REASONING_ON_CARD && cardIndex != -1) {
-
+		fillMarkerWithImage(p, img_up, ovWidth, ovHeight, rotatedCorners);
 	}
 }
 
