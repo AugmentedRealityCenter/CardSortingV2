@@ -58,6 +58,8 @@ cv::Mat img_exp_composite;
 std::vector<cv::Mat > img_l;
 std::vector<cv::Mat > img_r;
 
+cv::Mat text_overlay;
+
 //------------------------------------------------------------
 // ovrSwapTextureSet wrapper class that also maintains the render target views
 // needed for D3D11 rendering.
@@ -148,7 +150,7 @@ struct OculusTexture
 
 int g_currentExperiment = EXP_1_ID;
 int g_currentCard = 0; //2 of spades
-int g_visType = VIS_ARROWS_ON_CARD;
+int g_visType = VIS_REASONING_ON_CARD;
 
 bool cardGoesLeft(int cardId, int experimentId) {
 	int cardNum = (cardId % 8) + 2; //2-9 of each suit
@@ -281,7 +283,7 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat source, int ovWidth, int
 				int src_y = (int)(source.rows*y);
 				int src_index = 3*(src_x + src_y*source.cols);
 
-				if (clipTop && src_y < source.rows * 0.35) {
+				if (clipTop && src_y < source.rows * 0.35 || index < 0 || src_index < 0) {
 					continue;
 				}
 				for (int offset = 0; offset < 4; offset++) {
@@ -341,6 +343,19 @@ bool checkExpCondition(int experimentNum, int cardNum, int suitNum, int colNum, 
 	}
 
 	return false;
+}
+
+void addOverlay(unsigned char* p, int ovWidth, int ovHeight, cv::Mat &overlay) {
+	for (int row = 0; row < ovHeight && row < overlay.rows; row++) {
+		for (int col = 0; col < ovWidth && col < overlay.cols; col++) {
+			int pindex = (ovWidth/2 - overlay.cols/2 + col) + (64+row)*ovWidth;
+			int oindex = col + row*overlay.cols;
+
+			for (int i = 0; i < 3; i++) {
+				p[4 * pindex + i] = overlay.data[3 * oindex + i];
+			}
+		}
+	}
 }
 
 void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< int > &markerIds, std::vector< std::vector<cv::Point2f> > &markerCorners) {
@@ -524,6 +539,10 @@ static bool MainLoop(bool retryCreate)
 	img_r.push_back(cv::imread("R4.png", CV_LOAD_IMAGE_COLOR));
 	img_r.push_back(cv::imread("R5.png", CV_LOAD_IMAGE_COLOR));
 
+	text_overlay.create(32, 100, CV_8UC3);
+	text_overlay.setTo(cv::Scalar(255, 255, 255));
+	cv::putText(text_overlay, "Exp 1", cv::Point(0, 24), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255.0, 0.0, 0.0));
+
 	{
 		std::vector< int > markerIds;
 		std::vector< std::vector<cv::Point2f> > markerCorners;//, rejectedCandidates;
@@ -600,7 +619,7 @@ static bool MainLoop(bool retryCreate)
 						cv::aruco::detectMarkers(grey, dictionary, markerCorners, markerIds);//, parameters, rejectedCandidates);
 
 						processMarkers(p, ovWidth, ovHeight, markerIds, markerCorners);
-
+						addOverlay(p, ovWidth, ovHeight, text_overlay);
 						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 					}
 					else {
@@ -613,7 +632,7 @@ static bool MainLoop(bool retryCreate)
 						cv::aruco::detectMarkers(grey, dictionary, markerCorners, markerIds);//, parameters, rejectedCandidates);
 
 						processMarkers(p, ovWidth, ovHeight, markerIds, markerCorners);
-
+						addOverlay(p, ovWidth, ovHeight, text_overlay);
 						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 					}
 					RendererCamPlane(DIRECTX.Device, DIRECTX.Context);
