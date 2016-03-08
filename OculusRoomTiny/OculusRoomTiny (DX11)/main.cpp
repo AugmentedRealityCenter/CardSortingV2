@@ -148,7 +148,7 @@ struct OculusTexture
 
 int g_currentExperiment = EXP_1_ID;
 int g_currentCard = 0; //2 of spades
-int g_visType = VIS_REASONING_ON_CARD;
+int g_visType = VIS_ARROWS_ON_CARD;
 
 bool cardGoesLeft(int cardId, int experimentId) {
 	int cardNum = (cardId % 8) + 2; //2-9 of each suit
@@ -178,15 +178,6 @@ bool cardGoesLeft(int cardId, int experimentId) {
 	}
 }
 
-/* Scan marker ids to see which experiment we are doing */
-void updateExperiment(std::vector< int > &markerId) {
-	for (unsigned int i = 0; i < markerId.size(); i++) {
-		if (markerId[i] >= 60 && markerId[i] <= 63) {
-			g_currentExperiment = markerId[i];
-		}
-	}
-}
-
 float dist(cv::Point2f pt1, cv::Point2f pt2) {
 	cv::Point2f diff = pt1 - pt2;
 	return sqrt(diff.x*diff.x + diff.y*diff.y);
@@ -209,6 +200,18 @@ float markerEccentricity(std::vector< cv::Point2f > markerCorners) {
 		eccentricity = 1.0f / eccentricity;
 	}
 	return eccentricity;
+}
+
+/* Scan marker ids to see which experiment we are doing */
+void updateExperiment(std::vector< int > &markerId, std::vector< std::vector<cv::Point2f> > &markerCorners) {
+	for (unsigned int i = 0; i < markerId.size(); i++) {
+		float mArea = markerAreaApprox(markerCorners[i]);
+		float mEccentricity = markerEccentricity(markerCorners[i]);
+
+		if (markerId[i] >= 60 && markerId[i] <= 63 && mEccentricity > 0.5 && mArea > 250.0f && mArea < 7500.0f) {
+			g_currentExperiment = markerId[i];
+		}
+	}
 }
 
 void expandMarker(std::vector<cv::Point2f > &markerCorners, float amt) {
@@ -310,20 +313,38 @@ bool checkExpCondition(int experimentNum, int cardNum, int suitNum, int colNum, 
 		return false;
 
 	case 62:
-		break;
+		if (rowNum == 0 && (suitNum == SUIT_HEART || suitNum == SUIT_SPADE)) return true;
+		if (rowNum == 2 && (suitNum == SUIT_DIAMOND || suitNum == SUIT_CLUB)) return true;
+		if (rowNum == 1 && colNum == 0 && cardNum % 2 == 1) return true;
+		if (rowNum == 1 && colNum == 1 && cardNum % 2 == 0) return true;
+		if (rowNum == 3 && colNum == 0 && cardNum <= 5) return true;
+		if (rowNum == 3 && colNum == 1 && cardNum >= 6) return true;
+		return false;
 
 	case 61:
-		break;
+		if (rowNum == 0 && cardNum % 2 == 1) return true;
+		if (rowNum == 2 && cardNum % 2 == 0) return true;
+		if (rowNum == 1 && colNum == 0 && cardNum <= 5) return true;
+		if (rowNum == 1 && colNum == 1 && cardNum >= 6) return true;
+		if (rowNum == 3 && colNum == 0 && (suitNum == SUIT_HEART || suitNum == SUIT_CLUB)) return true;
+		if (rowNum == 3 && colNum == 1 && (suitNum == SUIT_DIAMOND || suitNum == SUIT_SPADE)) return true;
+		return false;
 
 	case 60:
-		break;
+		if (rowNum == 0 && cardNum <= 5) return true;
+		if (rowNum == 2 && cardNum >= 6) return true;
+		if (rowNum == 1 && colNum == 0 && (suitNum == SUIT_DIAMOND || suitNum == SUIT_CLUB)) return true;
+		if (rowNum == 1 && colNum == 1 && (suitNum == SUIT_SPADE || suitNum == SUIT_HEART)) return true;
+		if (rowNum == 3 && colNum == 0 && cardNum % 2 == 0) return true;
+		if (rowNum == 3 && colNum == 1 && cardNum % 2 == 1) return true;
+		return false;
 	}
 
 	return false;
 }
 
 void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< int > &markerIds, std::vector< std::vector<cv::Point2f> > &markerCorners) {
-	updateExperiment(markerIds); //Switch experiments, if necessary
+	updateExperiment(markerIds, markerCorners); //Switch experiments, if necessary
 	int cardIndex = updateCard(markerIds, markerCorners); //Switch currentCard, if necessary, and get index for rendering
 	std::pair<int, int> boxIndices = findBoxes(markerIds);
 
@@ -511,6 +532,8 @@ static bool MainLoop(bool retryCreate)
 		cv::Mat grey;
 		grey.create(ovHeight, ovWidth, CV_8UC1);//, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT), );
 
+		InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight, 1.0f);
+
 		// Main loop
 		while (DIRECTX.HandleMessages())
 		{
@@ -565,8 +588,6 @@ static bool MainLoop(bool retryCreate)
 						p.M[0][2], p.M[1][2], p.M[2][2], p.M[3][2],
 						p.M[0][3], p.M[1][3], p.M[2][3], p.M[3][3]);
 					XMMATRIX prod = XMMatrixMultiply(view, proj);
-
-					InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight, 1.0f);
 
 					//Camera View
 					if (eye == 0) {
