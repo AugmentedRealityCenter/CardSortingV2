@@ -61,6 +61,9 @@ cv::Mat img_left;
 cv::Mat img_right;
 cv::Mat img_up;
 std::vector<cv::Mat > img_exps;
+cv::Mat img_exp_composite;
+std::vector<cv::Mat > img_l;
+std::vector<cv::Mat > img_r;
 
 //------------------------------------------------------------
 // ovrSwapTextureSet wrapper class that also maintains the render target views
@@ -152,7 +155,7 @@ struct OculusTexture
 
 int g_currentExperiment = EXP_1_ID;
 int g_currentCard = 0; //2 of spades
-int g_visType = VIS_GUIDANCE_ON_CARD;
+int g_visType = VIS_REASONING_ON_CARD;
 
 bool cardGoesLeft(int cardId, int experimentId) {
 	int cardNum = (cardId % 8) + 2; //2-9 of each suit
@@ -335,8 +338,16 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 		}
 		else {
 			expandMarker(rotatedCorners, 4.0f);
-			fillMarkerWithImage(p, img_exps[g_currentExperiment % 60], ovWidth, ovHeight, rotatedCorners, true);
-			//TODO Reasoning version
+			img_exps[g_currentExperiment % 60].copyTo(img_exp_composite);
+			if (g_visType == VIS_REASONING_ON_CARD) {
+				if (goLeft) {
+					img_exp_composite = img_exp_composite.mul(img_r[0], 1.0 / 255.0);
+				}
+				else {
+					img_exp_composite = img_exp_composite.mul(img_l[0], 1.0 / 255.0);
+				}
+			}
+			fillMarkerWithImage(p, img_exp_composite, ovWidth, ovHeight, rotatedCorners, true);
 		}
 	}
 	else if (g_visType == VIS_ARROWS_ON_BOX && ((goLeft && boxIndices.first != -1) || (!goLeft && boxIndices.second != -1))) {
@@ -444,10 +455,25 @@ static bool MainLoop(bool retryCreate)
 	img_left = cv::imread("left.png", CV_LOAD_IMAGE_COLOR);
 	img_right = cv::imread("right.png", CV_LOAD_IMAGE_COLOR);
 	img_up = cv::imread("up.png", CV_LOAD_IMAGE_COLOR);
+	
 	img_exps.push_back(cv::imread("exp60.png", CV_LOAD_IMAGE_COLOR));
 	img_exps.push_back(cv::imread("exp61.png", CV_LOAD_IMAGE_COLOR));
 	img_exps.push_back(cv::imread("exp62.png", CV_LOAD_IMAGE_COLOR));
 	img_exps.push_back(cv::imread("exp63.png", CV_LOAD_IMAGE_COLOR));
+	
+	img_exp_composite = cv::imread("exp60.png", CV_LOAD_IMAGE_COLOR);
+	
+	img_l.push_back(cv::imread("L1.png", CV_LOAD_IMAGE_COLOR));
+	img_l.push_back(cv::imread("L2.png", CV_LOAD_IMAGE_COLOR));
+	img_l.push_back(cv::imread("L3.png", CV_LOAD_IMAGE_COLOR));
+	img_l.push_back(cv::imread("L4.png", CV_LOAD_IMAGE_COLOR));
+	img_l.push_back(cv::imread("L5.png", CV_LOAD_IMAGE_COLOR));
+
+	img_r.push_back(cv::imread("R1.png", CV_LOAD_IMAGE_COLOR));
+	img_r.push_back(cv::imread("R2.png", CV_LOAD_IMAGE_COLOR));
+	img_r.push_back(cv::imread("R3.png", CV_LOAD_IMAGE_COLOR));
+	img_r.push_back(cv::imread("R4.png", CV_LOAD_IMAGE_COLOR));
+	img_r.push_back(cv::imread("R5.png", CV_LOAD_IMAGE_COLOR));
 
 	{
 		std::vector< int > markerIds;
