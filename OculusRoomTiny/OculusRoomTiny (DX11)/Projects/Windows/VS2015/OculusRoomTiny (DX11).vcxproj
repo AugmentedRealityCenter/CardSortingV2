@@ -30,12 +30,13 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>OculusRoomTiny</RootNamespace>
     <ProjectName>OculusRoomTiny (DX11)</ProjectName>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -227,7 +228,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <AdditionalIncludeDirectories>C:\Users\brinkmwj.IT\Downloads\opencv_contrib-master\opencv_contrib-master\modules\aruco\include;C:\Users\brinkmwj.IT\Downloads\opencv\build\include;C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\include;$(OVRSDKROOT)LibOVR/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\brinkmwj.IT\Downloads\DXUT-master\DXUT-master\Optional;C:\Users\brinkmwj.IT\Downloads\DXUT-master\DXUT-master\Core;C:\Users\brinkmwj.IT\Downloads\opencv_contrib-master\opencv_contrib-master\modules\aruco\include;C:\Users\brinkmwj.IT\Downloads\opencv\build\include;C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\include;$(OVRSDKROOT)LibOVR/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Manifest>
       <EnableDPIAwareness>PerMonitorHighDPIAware</EnableDPIAwareness>

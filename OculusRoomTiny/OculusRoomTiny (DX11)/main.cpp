@@ -34,6 +34,10 @@ limitations under the License.
 #include <ovrvision_pro.h>	//Ovrvision SDK
 //#include <ovrvision_ar.h>
 
+#include "DXUT.h"
+#include "DXUTgui.h"
+#include "SDKmisc.h"
+
 #include <opencv2/aruco.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -44,6 +48,9 @@ extern int RendererCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceCon
 extern int SetCamImage(ID3D11DeviceContext* DeviceContext, unsigned char* camImage, unsigned int imagesize);
 extern int CleanCamPlane();
 
+//CDXUTDialogResourceManager g_resourceManager = NULL;
+CDXUTTextHelper*           g_pTxtHelper = NULL;
+
 OVR::OvrvisionPro ovrvision;
 //OVR::OvrvisionAR* pOvrAR;
 int ovWidth = 0;
@@ -53,6 +60,7 @@ int ovPixelsize = 4;
 cv::Mat img_left;
 cv::Mat img_right;
 cv::Mat img_up;
+std::vector<cv::Mat > img_exps;
 
 //------------------------------------------------------------
 // ovrSwapTextureSet wrapper class that also maintains the render target views
@@ -127,6 +135,7 @@ struct OculusTexture
 #define VIS_ARROWS_ON_CARD 0
 #define VIS_REASONING_ON_CARD 1
 #define VIS_ARROWS_ON_BOX 2
+#define VIS_GUIDANCE_ON_CARD 3
 
 #define SUIT_SPADE 0
 #define SUIT_HEART 1
@@ -143,7 +152,7 @@ struct OculusTexture
 
 int g_currentExperiment = EXP_1_ID;
 int g_currentCard = 0; //2 of spades
-int g_visType = VIS_ARROWS_ON_CARD;
+int g_visType = VIS_GUIDANCE_ON_CARD;
 
 bool cardGoesLeft(int cardId, int experimentId) {
 	int cardNum = (cardId % 8) + 2; //2-9 of each suit
@@ -206,6 +215,20 @@ float markerEccentricity(std::vector< cv::Point2f > markerCorners) {
 	return eccentricity;
 }
 
+void expandMarker(std::vector<cv::Point2f > &markerCorners, float amt) {
+	cv::Point2f center;
+	for (int i = 0; i < markerCorners.size(); i++) {
+		center += markerCorners[i];
+	}
+	center /= 4.0f;
+
+	for (int i = 0; i < markerCorners.size(); i++) {
+		cv::Point2f diff = markerCorners[i] - center;
+		diff *= amt;
+		markerCorners[i] = diff + center;
+	}
+}
+
 /* Scan marker ids to see which card we are looking at.
  * Return the index where the card was found, for use in lookup into markerCorners */
 int updateCard(std::vector< int > &markerId, std::vector< std::vector<cv::Point2f> > &markerCorners) {
@@ -238,7 +261,7 @@ std::pair<int, int> findBoxes(std::vector< int > &markerId) {
 	return std::make_pair(left_index, right_index);
 }
 
-void fillMarkerWithImage(unsigned char* target, cv::Mat source, int ovWidth, int ovHeight, std::vector<cv::Point2f> &corners) {
+void fillMarkerWithImage(unsigned char* target, cv::Mat source, int ovWidth, int ovHeight, std::vector<cv::Point2f> &corners, bool clipTop = false) {
 	if (corners.size() >= 4) {
 		float diagDist = cv::sqrt((corners[0].x - corners[2].x)*(corners[0].x - corners[2].x) +
 			(corners[0].y - corners[2].y)*(corners[0].y - corners[2].y));
@@ -258,6 +281,10 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat source, int ovWidth, int
 				int src_x = (int)(source.cols*x);
 				int src_y = (int)(source.rows*y);
 				int src_index = 3*(src_x + src_y*source.cols);
+
+				if (clipTop && src_y < source.rows * 0.35) {
+					continue;
+				}
 				for (int offset = 0; offset < 4; offset++) {
 					target[index + offset] = source.data[src_index + offset];
 				}
@@ -282,7 +309,7 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 	//Check which way the current card should go
 	bool goLeft = cardGoesLeft(g_currentCard, g_currentExperiment);
 
-	if ((g_visType == VIS_ARROWS_ON_CARD || g_visType == VIS_REASONING_ON_CARD) && cardIndex != -1) {
+	if ((g_visType == VIS_ARROWS_ON_CARD || g_visType == VIS_REASONING_ON_CARD || g_visType == VIS_GUIDANCE_ON_CARD) && cardIndex != -1) {
 		std::vector<cv::Point2f> rotatedCorners = markerCorners[cardIndex];
 
 		int mostLeftPt = 0;
@@ -307,7 +334,9 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 			fillMarkerWithImage(p, goLeft ? img_left : img_right, ovWidth, ovHeight, rotatedCorners);
 		}
 		else {
-			//Fill with instructive image
+			expandMarker(rotatedCorners, 3.0f);
+			fillMarkerWithImage(p, img_exps[g_currentExperiment % 60], ovWidth, ovHeight, rotatedCorners, true);
+			//TODO Reasoning version
 		}
 	}
 	else if (g_visType == VIS_ARROWS_ON_BOX && ((goLeft && boxIndices.first != -1) || (!goLeft && boxIndices.second != -1))) {
@@ -415,6 +444,10 @@ static bool MainLoop(bool retryCreate)
 	img_left = cv::imread("left.png", CV_LOAD_IMAGE_COLOR);
 	img_right = cv::imread("right.png", CV_LOAD_IMAGE_COLOR);
 	img_up = cv::imread("up.png", CV_LOAD_IMAGE_COLOR);
+	img_exps.push_back(cv::imread("exp60.png", CV_LOAD_IMAGE_COLOR));
+	img_exps.push_back(cv::imread("exp61.png", CV_LOAD_IMAGE_COLOR));
+	img_exps.push_back(cv::imread("exp62.png", CV_LOAD_IMAGE_COLOR));
+	img_exps.push_back(cv::imread("exp63.png", CV_LOAD_IMAGE_COLOR));
 
 	{
 		std::vector< int > markerIds;
