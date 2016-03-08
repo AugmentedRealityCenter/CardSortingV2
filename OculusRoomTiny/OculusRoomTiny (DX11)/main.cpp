@@ -212,6 +212,9 @@ void updateExperiment(std::vector< int > &markerId, std::vector< std::vector<cv:
 
 		if (markerId[i] >= 60 && markerId[i] <= 63 && mEccentricity > 0.5 && mArea > 250.0f && mArea < 7500.0f) {
 			g_currentExperiment = markerId[i];
+
+			text_overlay.setTo(cv::Scalar(255, 255, 255));
+			cv::putText(text_overlay, "Exp " + std::to_string(g_currentExperiment), cv::Point(0, 24), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255.0, 0.0, 0.0));
 		}
 	}
 }
@@ -539,9 +542,9 @@ static bool MainLoop(bool retryCreate)
 	img_r.push_back(cv::imread("R4.png", CV_LOAD_IMAGE_COLOR));
 	img_r.push_back(cv::imread("R5.png", CV_LOAD_IMAGE_COLOR));
 
-	text_overlay.create(32, 100, CV_8UC3);
+	text_overlay.create(32, 150, CV_8UC3);
 	text_overlay.setTo(cv::Scalar(255, 255, 255));
-	cv::putText(text_overlay, "Exp 1", cv::Point(0, 24), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255.0, 0.0, 0.0));
+	cv::putText(text_overlay, "Exp " + std::to_string(g_currentExperiment), cv::Point(0, 24), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255.0, 0.0, 0.0));
 
 	{
 		std::vector< int > markerIds;
