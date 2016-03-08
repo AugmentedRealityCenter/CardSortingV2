@@ -334,7 +334,7 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 			fillMarkerWithImage(p, goLeft ? img_left : img_right, ovWidth, ovHeight, rotatedCorners);
 		}
 		else {
-			expandMarker(rotatedCorners, 3.0f);
+			expandMarker(rotatedCorners, 4.0f);
 			fillMarkerWithImage(p, img_exps[g_currentExperiment % 60], ovWidth, ovHeight, rotatedCorners, true);
 			//TODO Reasoning version
 		}
