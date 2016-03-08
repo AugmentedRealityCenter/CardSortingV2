@@ -34,10 +34,6 @@ limitations under the License.
 #include <ovrvision_pro.h>	//Ovrvision SDK
 //#include <ovrvision_ar.h>
 
-#include "DXUT.h"
-#include "DXUTgui.h"
-#include "SDKmisc.h"
-
 #include <opencv2/aruco.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -47,9 +43,6 @@ extern int InitializeCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceC
 extern int RendererCamPlane(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext);
 extern int SetCamImage(ID3D11DeviceContext* DeviceContext, unsigned char* camImage, unsigned int imagesize);
 extern int CleanCamPlane();
-
-//CDXUTDialogResourceManager g_resourceManager = NULL;
-CDXUTTextHelper*           g_pTxtHelper = NULL;
 
 OVR::OvrvisionPro ovrvision;
 //OVR::OvrvisionAR* pOvrAR;
@@ -220,12 +213,12 @@ float markerEccentricity(std::vector< cv::Point2f > markerCorners) {
 
 void expandMarker(std::vector<cv::Point2f > &markerCorners, float amt) {
 	cv::Point2f center;
-	for (int i = 0; i < markerCorners.size(); i++) {
+	for (unsigned int i = 0; i < markerCorners.size(); i++) {
 		center += markerCorners[i];
 	}
 	center /= 4.0f;
 
-	for (int i = 0; i < markerCorners.size(); i++) {
+	for (unsigned int i = 0; i < markerCorners.size(); i++) {
 		cv::Point2f diff = markerCorners[i] - center;
 		diff *= amt;
 		markerCorners[i] = diff + center;
@@ -304,6 +297,31 @@ void rotateCorners(std::vector<cv::Point2f> &rotatedCorners) {
 	rotatedCorners[3] = t;
 }
 
+bool checkExpCondition(int experimentNum, int cardNum, int suitNum, int colNum, int rowNum) {
+	switch (experimentNum) {
+	case 63:
+	default:
+		if (rowNum == 0 && cardNum % 2 == 1) return true;
+		if (rowNum == 2 && cardNum % 2 == 0) return true;
+		if (rowNum == 1 && colNum == 0 && (suitNum == SUIT_HEART || suitNum == SUIT_SPADE)) return true;
+		if (rowNum == 1 && colNum == 1 && (suitNum == SUIT_CLUB || suitNum == SUIT_DIAMOND)) return true;
+		if (rowNum == 3 && colNum == 0 && (suitNum == SUIT_DIAMOND || suitNum == SUIT_SPADE)) return true;
+		if (rowNum == 3 && colNum == 1 && (suitNum == SUIT_CLUB || suitNum == SUIT_HEART)) return true;
+		return false;
+
+	case 62:
+		break;
+
+	case 61:
+		break;
+
+	case 60:
+		break;
+	}
+
+	return false;
+}
+
 void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< int > &markerIds, std::vector< std::vector<cv::Point2f> > &markerCorners) {
 	updateExperiment(markerIds); //Switch experiments, if necessary
 	int cardIndex = updateCard(markerIds, markerCorners); //Switch currentCard, if necessary, and get index for rendering
@@ -340,11 +358,21 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 			expandMarker(rotatedCorners, 4.0f);
 			img_exps[g_currentExperiment % 60].copyTo(img_exp_composite);
 			if (g_visType == VIS_REASONING_ON_CARD) {
+				//First, shade based on whether should go left or right
 				if (goLeft) {
 					img_exp_composite = img_exp_composite.mul(img_r[0], 1.0 / 255.0);
 				}
 				else {
 					img_exp_composite = img_exp_composite.mul(img_l[0], 1.0 / 255.0);
+				}
+
+				for (int row = 0; row < 4; row++) {
+					if (!checkExpCondition(g_currentExperiment, 2 + g_currentCard % 8, g_currentCard / 8, 0, row)) {
+						img_exp_composite = img_exp_composite.mul(img_l[row+1], 1.0 / 255.0);
+					}
+					if (!checkExpCondition(g_currentExperiment, 2 + g_currentCard % 8, g_currentCard / 8, 1, row)) {
+						img_exp_composite = img_exp_composite.mul(img_r[row+1], 1.0 / 255.0);
+					}
 				}
 			}
 			fillMarkerWithImage(p, img_exp_composite, ovWidth, ovHeight, rotatedCorners, true);
