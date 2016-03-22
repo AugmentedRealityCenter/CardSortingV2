@@ -315,20 +315,6 @@ void updateExperiment(std::vector< int > &markerId, std::vector< std::vector<cv:
 	}
 }
 
-void expandMarker(std::vector<cv::Point2f > &markerCorners, float amt) {
-	cv::Point2f center;
-	for (unsigned int i = 0; i < markerCorners.size(); i++) {
-		center += markerCorners[i];
-	}
-	center /= 4.0f;
-
-	for (unsigned int i = 0; i < markerCorners.size(); i++) {
-		cv::Point2f diff = markerCorners[i] - center;
-		diff *= amt;
-		markerCorners[i] = diff + center;
-	}
-}
-
 int applyError(int realCardNum) {
 	int fakeCardNum = realCardNum;
 	int suit = fakeCardNum / 8;
@@ -417,25 +403,43 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth, in
 			minY = std::min(minY, corners[i].y);
 			maxY = std::max(maxY, corners[i].y);
 		}
+		float diffX = maxX - minX;
+		float diffY = maxY - minY;
+		minY = minY - 2*diffY;
+		maxY = maxY + 2*diffY;
+		minX = minX - 2*diffX;
+		maxX = maxX + 2*diffX;
 
-		//Computer perspective projection here
-		cv::Mat inversePerspectiveProjection = getPerspectiveTransform(origPts, corners.data());
-		cv::Mat iipp = inversePerspectiveProjection.inv();
+		//Compute perspective projection here
+		cv::Mat perspectiveProjection = getPerspectiveTransform(corners.data(), origPts);
+		cv::Mat ipp = getPerspectiveTransform(origPts, corners.data());
+
+		static std::vector<cv::Point2f> eCorners;
+		static std::vector<cv::Point2f> eOrigPts;
+		eCorners.clear();
+		eOrigPts.clear();
+
+		eOrigPts.push_back(cv::Point2f(-1.5, -1.5));
+		eOrigPts.push_back(cv::Point2f(2.5, -1.5));
+		eOrigPts.push_back(cv::Point2f(2.5, 2.5));
+		eOrigPts.push_back(cv::Point2f(-1.5, 2.5));
+
+		cv::perspectiveTransform(eOrigPts, eCorners, ipp);
 
 		for (int y = (int)minY; y < (int)maxY; y++) {
 			for (int x = (int)minX; x < (int)maxX; x++) {
 				static std::vector< cv::Point2f> testPoint;
 				testPoint.clear();
 				testPoint.push_back(cv::Point2f((float)x, (float)y));
-				if (pointInTriangle(testPoint[0], corners[0], corners[1], corners[2]) ||
-					pointInTriangle(testPoint[0], corners[2], corners[3], corners[0])) {
+				if (pointInTriangle(testPoint[0], eCorners[0], eCorners[1], eCorners[2]) ||
+					pointInTriangle(testPoint[0], eCorners[2], eCorners[3], eCorners[0])) {
 					int target_index = 4 * (x + ovWidth*y);
 
 					static std::vector< cv::Point2f> srcPoint;
-					cv::perspectiveTransform(testPoint, srcPoint, iipp);
+					cv::perspectiveTransform(testPoint, srcPoint, perspectiveProjection);
 
-					int src_x = (int)(srcPoint[0].x*(source.cols-1));
-					int src_y = (int)(srcPoint[0].y*(source.rows-1));
+					int src_x = (int)(((1.5 + srcPoint[0].x)/4)*(source.cols-1));
+					int src_y = (int)(((1.5 + srcPoint[0].y)/4)*(source.rows-1));
 					int src_index = 3 * (src_x + src_y*source.cols);
 
 					if (src_x >= source.cols || src_y >= source.rows || 
@@ -546,7 +550,6 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 			fillMarkerWithImage(p, goLeft ? img_left : img_right, ovWidth, ovHeight, rotatedCorners);
 		}
 		else {
-			expandMarker(rotatedCorners, 4.0f);
 			if (g_imgExpCompDirty) { //Will only do this if something has changed in our state
 				img_exps[g_currentExperiment % 60].copyTo(img_exp_composite);
 				if (g_visType == VIS_REASONING_ON_CARD) {
