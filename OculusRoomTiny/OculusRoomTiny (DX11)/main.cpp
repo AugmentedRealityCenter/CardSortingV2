@@ -191,10 +191,20 @@ int mistakes[] = {
 	MISTAKE_NONE,
 	MISTAKE_NONE,
 	MISTAKE_NONE,
-	MISTAKE_EVENODD //31 - 28th
-};
-
-int deckBMistakes[] = {
+	MISTAKE_EVENODD, //31 - 28th
+	//Mistakes for experiment 60, deck B
+	MISTAKE_NONE, //0
+	MISTAKE_SUITMINUS, //1 - 28th card seen
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_EVENODD, //5 - 19th card seen
+	MISTAKE_NONE,
+	MISTAKE_EVENODD, //7 - 31st card seen
+	MISTAKE_BIGLITTLE, //8 - 25th card seen
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_SUITPLUS, //11 - 7th card seen
 	MISTAKE_NONE,
 	MISTAKE_NONE,
 	MISTAKE_NONE,
@@ -204,26 +214,14 @@ int deckBMistakes[] = {
 	MISTAKE_NONE,
 	MISTAKE_NONE,
 	MISTAKE_NONE,
+	MISTAKE_BIGLITTLE, //21 - 10th card seen
 	MISTAKE_NONE,
 	MISTAKE_NONE,
 	MISTAKE_NONE,
 	MISTAKE_NONE,
+	MISTAKE_SUITPLUS, //26 - 21st card seen
 	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
+	MISTAKE_EVENODD, //28 - 14th card seen
 	MISTAKE_NONE,
 	MISTAKE_NONE,
 	MISTAKE_NONE
@@ -335,9 +333,13 @@ int applyError(int realCardNum) {
 	int fakeCardNum = realCardNum;
 	int suit = fakeCardNum / 8;
 	int val = fakeCardNum % 8;
+	int offset = 0;
+	if (g_currentExperiment == 60) {
+		offset = 32;
+	}
 
-	if (g_currentExperiment == 63) {
-		switch (mistakes[realCardNum]) {
+	if (g_currentExperiment == 63 || g_currentExperiment == 60) {
+		switch (mistakes[realCardNum + offset]) {
 		case MISTAKE_BIGLITTLE:
 			fakeCardNum = fakeCardNum ^ 4; //Flips the high order bit of the card number ... so 0 becomes 4, 5 becomes 1, and so on.
 			break;
