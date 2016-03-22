@@ -24,6 +24,7 @@ limitations under the License.
 /// It runs with DirectX11.
 
 #include <iostream>
+#include <algorithm>
 
 // Include DirectX
 #include "Win32_DirectXAppUtil.h"
@@ -59,6 +60,8 @@ std::vector<cv::Mat > img_l;
 std::vector<cv::Mat > img_r;
 
 cv::Mat text_overlay;
+
+void rotateCorners(std::vector<cv::Point2f> &rotatedCorners);
 
 //------------------------------------------------------------
 // ovrSwapTextureSet wrapper class that also maintains the render target views
@@ -151,6 +154,18 @@ struct OculusTexture
 int g_currentExperiment = EXP_1_ID;
 int g_currentCard = 0; //2 of spades
 int g_visType = VIS_REASONING_ON_CARD;
+
+//From www.blackpawn.com/texts/pointinpoly
+bool sameSide(cv::Point2f p1, cv::Point2f p2, cv::Point2f a, cv::Point2f b) {
+	double cp1 = (b - a).cross(p1 - a);
+	double cp2 = (b - a).cross(p2 - a);
+
+	return cp1*cp2 >= 0;
+}
+
+bool pointInTriangle(cv::Point2f p, cv::Point2f a, cv::Point2f b, cv::Point2f c) {
+	return sameSide(p, a, b, c) && sameSide(p, b, a, c) && sameSide(p, c, a, b);
+}
 
 bool cardGoesLeft(int cardId, int experimentId) {
 	int cardNum = (cardId % 8) + 2; //2-9 of each suit
@@ -265,32 +280,54 @@ std::pair<int, int> findBoxes(std::vector< int > &markerId) {
 	return std::make_pair(left_index, right_index);
 }
 
+cv::Point2f origPts[] = { 
+	cv::Point2f(0, 0),
+	cv::Point2f(1, 0),
+	cv::Point2f(1, 1),
+	cv::Point2f(0, 1) 
+};
+
 void fillMarkerWithImage(unsigned char* target, cv::Mat source, int ovWidth, int ovHeight, std::vector<cv::Point2f> &corners, bool clipTop = false) {
 	if (corners.size() >= 4) {
-		float diagDist = cv::sqrt((corners[0].x - corners[2].x)*(corners[0].x - corners[2].x) +
-			(corners[0].y - corners[2].y)*(corners[0].y - corners[2].y));
-		
-		float res = 1.0f/diagDist;
+		float minX = corners[0].x;
+		float maxX = corners[0].x;
+		float minY = corners[0].y;
+		float maxY = corners[0].y;
+		for (unsigned int i = 1; i < corners.size(); i++) {
+			minX = std::min(minX, corners[i].x);
+			maxX = std::max(maxX, corners[i].x);
+			minY = std::min(minY, corners[i].y);
+			maxY = std::max(maxY, corners[i].y);
+		}
 
-		for (float y = 0.0f; y < 1.0f; y += res) {
-			float left_y = corners[0].y*y + corners[3].y*(1 - y);
-			float left_x = corners[0].x*y + corners[3].x*(1 - y);
-			float right_y = corners[1].y*y + corners[2].y*(1 - y);
-			float right_x = corners[1].x*y + corners[2].x*(1 - y);
+		//Computer perspective projection here
+		cv::Mat inversePerspectiveProjection = getPerspectiveTransform(origPts, corners.data());
+		cv::Mat iipp = inversePerspectiveProjection.inv();
 
-			for (float x = 0.0f; x < 1.0f; x += res) {
-				float my_y = left_y*x + right_y*(1 - x);
-				float my_x = left_x*x + right_x*(1 - x);
-				int index = 4 * ((int)my_x + ovWidth*(int)my_y);
-				int src_x = (int)(source.cols*x);
-				int src_y = (int)(source.rows*y);
-				int src_index = 3*(src_x + src_y*source.cols);
+		for (int y = (int)minY; y < (int)maxY; y++) {
+			for (int x = (int)minX; x < (int)maxX; x++) {
+				static std::vector< cv::Point2f> testPoint;
+				testPoint.clear();
+				testPoint.push_back(cv::Point2f((float)x, (float)y));
+				if (pointInTriangle(testPoint[0], corners[0], corners[1], corners[2]) ||
+					pointInTriangle(testPoint[0], corners[2], corners[3], corners[0])) {
+					int target_index = 4 * (x + ovWidth*y);
 
-				if (clipTop && src_y < source.rows * 0.35 || index < 0 || src_index < 0) {
-					continue;
-				}
-				for (int offset = 0; offset < 4; offset++) {
-					target[index + offset] = source.data[src_index + offset];
+					static std::vector< cv::Point2f> srcPoint;
+					cv::perspectiveTransform(testPoint, srcPoint, iipp);
+
+					int src_x = (int)(srcPoint[0].x*(source.cols-1));
+					int src_y = (int)(srcPoint[0].y*(source.rows-1));
+					int src_index = 3 * (src_x + src_y*source.cols);
+
+					if (src_x >= source.cols || src_y >= source.rows || 
+						(clipTop && src_y < source.rows * 0.35) || target_index < 0 || src_index < 0) {
+						continue;
+					}
+
+					for (int offset = 0; offset < 4; offset++) {
+						target[target_index + offset] = (3*(int)source.data[src_index + offset] + 1*(int)target[target_index + offset]) / 4;
+					}
 				}
 			}
 		}
@@ -386,9 +423,6 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 		for (int i = 0; i < numRots; i++) {
 			rotateCorners(rotatedCorners);
 		}
-		//Rotate twice, because I put the images on the markers the wrong way up.
-		rotateCorners(rotatedCorners);
-		rotateCorners(rotatedCorners);
 		
 		if (g_visType == VIS_ARROWS_ON_CARD) {
 			fillMarkerWithImage(p, goLeft ? img_left : img_right, ovWidth, ovHeight, rotatedCorners);
@@ -420,10 +454,6 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 	else if (g_visType == VIS_ARROWS_ON_BOX && ((goLeft && boxIndices.first != -1) || (!goLeft && boxIndices.second != -1))) {
 		int index = goLeft ? boxIndices.first : boxIndices.second;
 		std::vector<cv::Point2f> rotatedCorners = markerCorners[index];
-		
-		//Rotate twice, because I put the images on the markers the wrong way up.
-		rotateCorners(rotatedCorners);
-		rotateCorners(rotatedCorners);
 
 		fillMarkerWithImage(p, img_up, ovWidth, ovHeight, rotatedCorners);
 	}
