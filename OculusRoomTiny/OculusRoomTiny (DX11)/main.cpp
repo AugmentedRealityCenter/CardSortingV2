@@ -151,6 +151,84 @@ struct OculusTexture
 #define LEFT_BOX_ID 58
 #define RIGHT_BOX_ID 59
 
+#define MISTAKE_NONE 0
+#define MISTAKE_EVENODD 1
+#define MISTAKE_BIGLITTLE 2
+#define MISTAKE_SUITPLUS 4
+#define MISTAKE_SUITMINUS 8
+
+//Index is card number, NOT order in which subject will see cards
+int mistakes[] = {
+	//First, mistakes for experiment 63, which uses deck A
+	MISTAKE_SUITPLUS, //0 - 7th card in order -- Change spade to heart
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_SUITMINUS, //7 - 31st
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_SUITMINUS, //12 - 24th
+	MISTAKE_NONE,
+	MISTAKE_EVENODD, //14 - 16th card seen
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_SUITMINUS, //23 - 19th
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_EVENODD, //26 - 25th
+	MISTAKE_EVENODD, //27 - 11th card seen 
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_EVENODD //31 - 28th
+};
+
+int deckBMistakes[] = {
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE,
+	MISTAKE_NONE
+};
+
 int g_currentExperiment = EXP_1_ID;
 int g_currentCard = 0; //2 of spades
 int g_visType = VIS_REASONING_ON_CARD;
@@ -253,6 +331,36 @@ void expandMarker(std::vector<cv::Point2f > &markerCorners, float amt) {
 	}
 }
 
+int applyError(int realCardNum) {
+	int fakeCardNum = realCardNum;
+	int suit = fakeCardNum / 8;
+	int val = fakeCardNum % 8;
+
+	if (g_currentExperiment == 63) {
+		switch (mistakes[realCardNum]) {
+		case MISTAKE_BIGLITTLE:
+			fakeCardNum = fakeCardNum ^ 4; //Flips the high order bit of the card number ... so 0 becomes 4, 5 becomes 1, and so on.
+			break;
+		case MISTAKE_EVENODD:
+			fakeCardNum = fakeCardNum ^ 1; //Flips even to odd, odd to even
+			break;
+		case MISTAKE_SUITMINUS:
+			suit = (suit + 3) % 4;
+			fakeCardNum = suit * 8 + val;
+			break;
+		case MISTAKE_SUITPLUS:
+			suit = (suit + 1) % 4;
+			fakeCardNum = suit * 8 + val;
+			break;
+		default:
+			//do nothing
+			break;
+		}
+
+	}
+	return fakeCardNum;
+}
+
 /* Scan marker ids to see which card we are looking at.
  * Return the index where the card was found, for use in lookup into markerCorners */
 int updateCard(std::vector< int > &markerId, std::vector< std::vector<cv::Point2f> > &markerCorners) {
@@ -262,10 +370,10 @@ int updateCard(std::vector< int > &markerId, std::vector< std::vector<cv::Point2
 		float mEccentricity = markerEccentricity(markerCorners[i]);
 
 		if (markerId[i] < 32 &&  mEccentricity > 0.5 && mArea > 250.0f && mArea < 7500.0f) {
-			if (g_currentCard != markerId[i]) {
+			if (g_currentCard != applyError(markerId[i])) {
 				g_imgExpCompDirty = true;
 			}
-			g_currentCard = markerId[i];
+			g_currentCard = applyError(markerId[i]);
 			index = i;
 		}
 	}
