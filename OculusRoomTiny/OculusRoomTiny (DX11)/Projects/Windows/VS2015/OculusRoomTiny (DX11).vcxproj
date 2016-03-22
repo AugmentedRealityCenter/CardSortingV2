@@ -157,7 +157,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <AdditionalOptions>/d2Zi+ %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\include;C:\Users\brinkmwj.IT\Downloads\opencv_contrib-master\opencv_contrib-master\modules\aruco\include;C:\Users\brinkmwj.IT\Downloads\opencv\build\include;$(OVRSDKROOT)LibOVR/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\brinkmwj.IT\Downloads\OVRVision_1.6.1\ovrvisionprosdk_windows\ovrvisionprosdk_windows\include;C:\Users\brinkmwj.IT\Downloads\opencv_contrib-master\opencv_contrib-master\modules\aruco\include;C:\Users\brinkmwj.IT\Downloads\opencv\build\include;$(OVRSDKROOT)LibOVR/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -166,7 +166,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <AdditionalDependencies>$(OVRSDKROOT)LibOVR/Lib/Windows/$(Platform)/$(Configuration)/VS2015/LibOVR.lib;opencv_aruco310.lib;opencv_calib3d310.lib;opencv_core310.lib;opencv_features2d310.lib;opencv_flann310.lib;opencv_highgui310.lib;opencv_imgcodecs310.lib;opencv_imgproc310.lib;opencv_ml310.lib;opencv_videoio310.lib;ovrvision.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\bin\x86;C:\Users\brinkmwj.IT\Downloads\opencv\build\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\brinkmwj.IT\Downloads\OVRVision_1.6.1\ovrvisionprosdk_windows\ovrvisionprosdk_windows\bin\x86;C:\Users\brinkmwj.IT\Downloads\opencv\build\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableDPIAwareness>PerMonitorHighDPIAware</EnableDPIAwareness>
@@ -228,7 +228,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <AdditionalIncludeDirectories>C:\Users\brinkmwj.IT\Downloads\DXUT-master\DXUT-master\Optional;C:\Users\brinkmwj.IT\Downloads\DXUT-master\DXUT-master\Core;C:\Users\brinkmwj.IT\Downloads\opencv_contrib-master\opencv_contrib-master\modules\aruco\include;C:\Users\brinkmwj.IT\Downloads\opencv\build\include;C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\include;$(OVRSDKROOT)LibOVR/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\brinkmwj.IT\Downloads\opencv_contrib-master\opencv_contrib-master\modules\aruco\include;C:\Users\brinkmwj.IT\Downloads\opencv\build\include;C:\Users\brinkmwj.IT\Downloads\OVRVision_1.6.1\ovrvisionprosdk_windows\ovrvisionprosdk_windows\include;$(OVRSDKROOT)LibOVR/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Manifest>
       <EnableDPIAwareness>PerMonitorHighDPIAware</EnableDPIAwareness>
@@ -236,7 +236,7 @@
     <Link>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <AdditionalDependencies>$(OVRSDKROOT)LibOVR/Lib/Windows/$(Platform)/$(Configuration)/VS2015/LibOVR.lib;ovrvisiond.lib;opencv_aruco310d.lib;opencv_calib3d310d.lib;opencv_core310d.lib;opencv_features2d310d.lib;opencv_flann310d.lib;opencv_highgui310d.lib;opencv_imgcodecs310d.lib;opencv_imgproc310d.lib;opencv_ml310d.lib;opencv_videoio310d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\brinkmwj.IT\Downloads\opencv\build\lib\Debug;C:\Users\brinkmwj.IT\Downloads\ovrvisionprosdk_windows\ovrvisionprosdk_windows\bin\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\brinkmwj.IT\Downloads\opencv\build\lib\Debug;C:\Users\brinkmwj.IT\Downloads\OVRVision_1.6.1\ovrvisionprosdk_windows\ovrvisionprosdk_windows\bin\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
