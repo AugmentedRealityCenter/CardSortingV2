@@ -155,6 +155,8 @@ int g_currentExperiment = EXP_1_ID;
 int g_currentCard = 0; //2 of spades
 int g_visType = VIS_REASONING_ON_CARD;
 
+bool g_imgExpCompDirty = true;
+
 //From www.blackpawn.com/texts/pointinpoly
 bool sameSide(cv::Point2f p1, cv::Point2f p2, cv::Point2f a, cv::Point2f b) {
 	double cp1 = (b - a).cross(p1 - a);
@@ -226,6 +228,9 @@ void updateExperiment(std::vector< int > &markerId, std::vector< std::vector<cv:
 		float mEccentricity = markerEccentricity(markerCorners[i]);
 
 		if (markerId[i] >= 60 && markerId[i] <= 63 && mEccentricity > 0.5 && mArea > 250.0f && mArea < 7500.0f) {
+			if (g_currentExperiment != markerId[i]) {
+				g_imgExpCompDirty = true;
+			}
 			g_currentExperiment = markerId[i];
 
 			text_overlay.setTo(cv::Scalar(255, 255, 255));
@@ -257,6 +262,9 @@ int updateCard(std::vector< int > &markerId, std::vector< std::vector<cv::Point2
 		float mEccentricity = markerEccentricity(markerCorners[i]);
 
 		if (markerId[i] < 32 &&  mEccentricity > 0.5 && mArea > 250.0f && mArea < 7500.0f) {
+			if (g_currentCard != markerId[i]) {
+				g_imgExpCompDirty = true;
+			}
 			g_currentCard = markerId[i];
 			index = i;
 		}
@@ -287,7 +295,7 @@ cv::Point2f origPts[] = {
 	cv::Point2f(0, 1) 
 };
 
-void fillMarkerWithImage(unsigned char* target, cv::Mat source, int ovWidth, int ovHeight, std::vector<cv::Point2f> &corners, bool clipTop = false) {
+void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth, int ovHeight, std::vector<cv::Point2f> &corners, bool clipTop = false) {
 	if (corners.size() >= 4) {
 		float minX = corners[0].x;
 		float maxX = corners[0].x;
@@ -429,24 +437,27 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 		}
 		else {
 			expandMarker(rotatedCorners, 4.0f);
-			img_exps[g_currentExperiment % 60].copyTo(img_exp_composite);
-			if (g_visType == VIS_REASONING_ON_CARD) {
-				//First, shade based on whether should go left or right
-				if (goLeft) {
-					img_exp_composite = img_exp_composite.mul(img_r[0], 1.0 / 255.0);
-				}
-				else {
-					img_exp_composite = img_exp_composite.mul(img_l[0], 1.0 / 255.0);
-				}
+			if (g_imgExpCompDirty) { //Will only do this if something has changed in our state
+				img_exps[g_currentExperiment % 60].copyTo(img_exp_composite);
+				if (g_visType == VIS_REASONING_ON_CARD) {
+					//First, shade based on whether should go left or right
+					if (goLeft) {
+						img_exp_composite = img_exp_composite.mul(img_r[0], 1.0 / 255.0);
+					}
+					else {
+						img_exp_composite = img_exp_composite.mul(img_l[0], 1.0 / 255.0);
+					}
 
-				for (int row = 0; row < 4; row++) {
-					if (!checkExpCondition(g_currentExperiment, 2 + g_currentCard % 8, g_currentCard / 8, 0, row)) {
-						img_exp_composite = img_exp_composite.mul(img_l[row+1], 1.0 / 255.0);
-					}
-					if (!checkExpCondition(g_currentExperiment, 2 + g_currentCard % 8, g_currentCard / 8, 1, row)) {
-						img_exp_composite = img_exp_composite.mul(img_r[row+1], 1.0 / 255.0);
+					for (int row = 0; row < 4; row++) {
+						if (!checkExpCondition(g_currentExperiment, 2 + g_currentCard % 8, g_currentCard / 8, 0, row)) {
+							img_exp_composite = img_exp_composite.mul(img_l[row + 1], 1.0 / 255.0);
+						}
+						if (!checkExpCondition(g_currentExperiment, 2 + g_currentCard % 8, g_currentCard / 8, 1, row)) {
+							img_exp_composite = img_exp_composite.mul(img_r[row + 1], 1.0 / 255.0);
+						}
 					}
 				}
+				g_imgExpCompDirty = false;
 			}
 			fillMarkerWithImage(p, img_exp_composite, ovWidth, ovHeight, rotatedCorners, true);
 		}
@@ -581,8 +592,10 @@ static bool MainLoop(bool retryCreate)
 		std::vector< std::vector<cv::Point2f> > markerCorners;//, rejectedCandidates;
         //cv::Ptr<cv::aruco::DetectorParameters> parameters = new cv::aruco::DetectorParameters(); 
 		cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_ARUCO_ORIGINAL);
-		cv::Mat grey;
-		grey.create(ovHeight, ovWidth, CV_8UC1);//, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT), );
+		static cv::Mat grey;
+		if (grey.dims != 2) {
+			grey.create(ovHeight, ovWidth, CV_8UC1);//, ovrvision.GetCamImageBGRA(OVR::Cameye::OV_CAMEYE_LEFT), );
+		}
 
 		InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight, 1.0f);
 
