@@ -234,14 +234,14 @@ int g_visType = VIS_REASONING_ON_CARD;
 bool g_imgExpCompDirty = true;
 
 //From www.blackpawn.com/texts/pointinpoly
-bool sameSide(cv::Point2f p1, cv::Point2f p2, cv::Point2f a, cv::Point2f b) {
+bool sameSide(cv::Point2f &p1, cv::Point2f &p2, cv::Point2f &a, cv::Point2f &b) {
 	double cp1 = (b - a).cross(p1 - a);
 	double cp2 = (b - a).cross(p2 - a);
 
 	return cp1*cp2 >= 0;
 }
 
-bool pointInTriangle(cv::Point2f p, cv::Point2f a, cv::Point2f b, cv::Point2f c) {
+bool pointInTriangle(cv::Point2f &p, cv::Point2f &a, cv::Point2f &b, cv::Point2f &c) {
 	return sameSide(p, a, b, c) && sameSide(p, b, a, c) && sameSide(p, c, a, b);
 }
 
