@@ -157,6 +157,13 @@ struct OculusTexture
 #define MISTAKE_SUITPLUS 4
 #define MISTAKE_SUITMINUS 8
 
+int visTypeMapping[] = {
+	VIS_ARROWS_ON_CARD, //Marker 60, EXP_4
+	VIS_ARROWS_ON_CARD,
+	VIS_REASONING_ON_CARD,
+	VIS_REASONING_ON_CARD //Marker 63, EXP_1
+};
+
 //Index is card number, NOT order in which subject will see cards
 int mistakes[] = {
 	//First, mistakes for experiment 63, which uses deck A
@@ -313,6 +320,10 @@ void updateExperiment(std::vector< int > &markerId, std::vector< std::vector<cv:
 			cv::putText(text_overlay, "Exp " + std::to_string(g_currentExperiment), cv::Point(0, 24), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255.0, 0.0, 0.0));
 		}
 	}
+
+	if (g_currentExperiment >= EXP_4_ID && g_currentExperiment <= EXP_1_ID) {
+		g_visType = visTypeMapping[g_currentExperiment - EXP_4_ID];
+	}
 }
 
 int applyError(int realCardNum) {
@@ -391,7 +402,7 @@ cv::Point2f origPts[] = {
 	cv::Point2f(0, 1) 
 };
 
-void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth, int ovHeight, std::vector<cv::Point2f> &corners, bool clipTop = false) {
+void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth, int ovHeight, std::vector<cv::Point2f> &corners, float expansion = 1.0f, bool clipTop = false) {
 	if (corners.size() >= 4) {
 		float minX = corners[0].x;
 		float maxX = corners[0].x;
@@ -405,10 +416,10 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth, in
 		}
 		float diffX = maxX - minX;
 		float diffY = maxY - minY;
-		minY = minY - 2*diffY;
-		maxY = maxY + 2*diffY;
-		minX = minX - 2*diffX;
-		maxX = maxX + 2*diffX;
+		minY = minY - ((expansion - 1.0f) / 2)*diffY;
+		maxY = maxY + ((expansion - 1.0f) / 2)*diffY;
+		minX = minX - ((expansion - 1.0f) / 2)*diffX;
+		maxX = maxX + ((expansion - 1.0f) / 2)*diffX;
 
 		//Compute perspective projection here
 		cv::Mat perspectiveProjection = getPerspectiveTransform(corners.data(), origPts);
@@ -419,10 +430,10 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth, in
 		eCorners.clear();
 		eOrigPts.clear();
 
-		eOrigPts.push_back(cv::Point2f(-1.5, -1.5));
-		eOrigPts.push_back(cv::Point2f(2.5, -1.5));
-		eOrigPts.push_back(cv::Point2f(2.5, 2.5));
-		eOrigPts.push_back(cv::Point2f(-1.5, 2.5));
+		eOrigPts.push_back(cv::Point2f(0.5f - expansion / 2, 0.5f - expansion / 2));
+		eOrigPts.push_back(cv::Point2f(0.5f + expansion / 2, 0.5f - expansion / 2));
+		eOrigPts.push_back(cv::Point2f(0.5f + expansion / 2, 0.5f + expansion / 2));
+		eOrigPts.push_back(cv::Point2f(0.5f - expansion / 2, 0.5f + expansion / 2));
 
 		cv::perspectiveTransform(eOrigPts, eCorners, ipp);
 
@@ -438,8 +449,8 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth, in
 					static std::vector< cv::Point2f> srcPoint;
 					cv::perspectiveTransform(testPoint, srcPoint, perspectiveProjection);
 
-					int src_x = (int)(((1.5 + srcPoint[0].x)/4)*(source.cols-1));
-					int src_y = (int)(((1.5 + srcPoint[0].y)/4)*(source.rows-1));
+					int src_x = (int)((((expansion / 2 - 0.5f) + srcPoint[0].x) / expansion)*(source.cols - 1));
+					int src_y = (int)((((expansion / 2 - 0.5f) + srcPoint[0].y) / expansion)*(source.rows - 1));
 					int src_index = 3 * (src_x + src_y*source.cols);
 
 					if (src_x >= source.cols || src_y >= source.rows || 
@@ -572,7 +583,7 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight, std::vector< in
 				}
 				g_imgExpCompDirty = false;
 			}
-			fillMarkerWithImage(p, img_exp_composite, ovWidth, ovHeight, rotatedCorners, true);
+			fillMarkerWithImage(p, img_exp_composite, ovWidth, ovHeight, rotatedCorners, 4.0f, true);
 		}
 	}
 	else if (g_visType == VIS_ARROWS_ON_BOX && ((goLeft && boxIndices.first != -1) || (!goLeft && boxIndices.second != -1))) {
