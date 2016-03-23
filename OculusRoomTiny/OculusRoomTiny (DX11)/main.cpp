@@ -417,10 +417,10 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth, in
 		}
 		float diffX = maxX - minX;
 		float diffY = maxY - minY;
-		minY = minY - ((expansion - 1.0f) / 2)*diffY;
-		maxY = maxY + ((expansion - 1.0f) / 2)*diffY;
-		minX = minX - ((expansion - 1.0f) / 2)*diffX;
-		maxX = maxX + ((expansion - 1.0f) / 2)*diffX;
+		minY = minY - (expansion / 2)*diffY;
+		maxY = maxY + (expansion / 2)*diffY;
+		minX = minX - (expansion / 2)*diffX;
+		maxX = maxX + (expansion / 2)*diffX;
 
 		//Compute perspective projection here
 		cv::Mat perspProj = getPerspectiveTransform(corners.data(), origPts);
@@ -715,7 +715,8 @@ static bool MainLoop(bool retryCreate)
 	{
 		std::vector< int > markerIds;
 		std::vector< std::vector<cv::Point2f> > markerCorners;//, rejectedCandidates;
-        //cv::Ptr<cv::aruco::DetectorParameters> parameters = new cv::aruco::DetectorParameters(); 
+        cv::Ptr<cv::aruco::DetectorParameters> parameters = new cv::aruco::DetectorParameters(); 
+		parameters->doCornerRefinement = true;
 		cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_ARUCO_ORIGINAL);
 		static cv::Mat grey;
 		if (grey.dims != 2) {
@@ -777,7 +778,7 @@ static bool MainLoop(bool retryCreate)
 							unsigned char average = (((int)p[4 * i] + (int)p[4 * i + 1] + (int)p[4 * i + 2]) / 3);
 							grey.data[i] = average;
 						}
-						cv::aruco::detectMarkers(grey, dictionary, markerCorners, markerIds);//, parameters, rejectedCandidates);
+						cv::aruco::detectMarkers(grey, dictionary, markerCorners, markerIds, parameters);//, parameters, rejectedCandidates);
 
 						processMarkers(p, ovWidth, ovHeight, markerIds, markerCorners);
 						addOverlay(p, ovWidth, ovHeight, text_overlay);
@@ -790,7 +791,7 @@ static bool MainLoop(bool retryCreate)
 							unsigned char average = (((int)p[4 * i] + (int)p[4 * i + 1] + (int)p[4 * i + 2]) / 3);
 							grey.data[i] = average;
 						}
-						cv::aruco::detectMarkers(grey, dictionary, markerCorners, markerIds);//, parameters, rejectedCandidates);
+						cv::aruco::detectMarkers(grey, dictionary, markerCorners, markerIds, parameters);//, parameters, rejectedCandidates);
 
 						processMarkers(p, ovWidth, ovHeight, markerIds, markerCorners);
 						addOverlay(p, ovWidth, ovHeight, text_overlay);
