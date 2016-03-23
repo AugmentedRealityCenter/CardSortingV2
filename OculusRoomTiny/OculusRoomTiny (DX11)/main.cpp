@@ -404,6 +404,7 @@ cv::Point2f origPts[] = {
 
 void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth, int ovHeight, std::vector<cv::Point2f> &corners, float expansion = 1.0f, bool clipTop = false) {
 	if (corners.size() >= 4) {
+		//First, find the Region Of Interest that might need to be filled
 		float minX = corners[0].x;
 		float maxX = corners[0].x;
 		float minY = corners[0].y;
@@ -422,8 +423,8 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth, in
 		maxX = maxX + ((expansion - 1.0f) / 2)*diffX;
 
 		//Compute perspective projection here
-		cv::Mat perspectiveProjection = getPerspectiveTransform(corners.data(), origPts);
-		cv::Mat ipp = getPerspectiveTransform(origPts, corners.data());
+		cv::Mat perspProj = getPerspectiveTransform(corners.data(), origPts);
+		cv::Mat invPerspProj = getPerspectiveTransform(origPts, corners.data());
 
 		static std::vector<cv::Point2f> eCorners;
 		static std::vector<cv::Point2f> eOrigPts;
@@ -435,7 +436,7 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth, in
 		eOrigPts.push_back(cv::Point2f(0.5f + expansion / 2, 0.5f + expansion / 2));
 		eOrigPts.push_back(cv::Point2f(0.5f - expansion / 2, 0.5f + expansion / 2));
 
-		cv::perspectiveTransform(eOrigPts, eCorners, ipp);
+		cv::perspectiveTransform(eOrigPts, eCorners, invPerspProj);
 
 		for (int y = (int)minY; y < (int)maxY; y++) {
 			for (int x = (int)minX; x < (int)maxX; x++) {
@@ -447,7 +448,7 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth, in
 					int target_index = 4 * (x + ovWidth*y);
 
 					static std::vector< cv::Point2f> srcPoint;
-					cv::perspectiveTransform(testPoint, srcPoint, perspectiveProjection);
+					cv::perspectiveTransform(testPoint, srcPoint, perspProj);
 
 					int src_x = (int)((((expansion / 2 - 0.5f) + srcPoint[0].x) / expansion)*(source.cols - 1));
 					int src_y = (int)((((expansion / 2 - 0.5f) + srcPoint[0].y) / expansion)*(source.rows - 1));
