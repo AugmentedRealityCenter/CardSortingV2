@@ -250,23 +250,23 @@ bool cardGoesLeft(int cardId, int experimentId) {
 	int suit = cardId / 8;
 
 	switch (experimentId) {
-	case 63:
+	case EXP_1_ID:
 	default:
 		//Left: Odd heart and spade, even space and diamond
 		return (cardNum % 2 == 1 && (suit == SUIT_HEART || suit == SUIT_SPADE)) ||
 			(cardNum % 2 == 0 && (suit == SUIT_SPADE || suit == SUIT_DIAMOND));
 
-	case 62:
+	case EXP_2_ID:
 		//Left: Heart and Spade Odd, or Club and Diamond 2-5
 		return (cardNum % 2 == 1 && (suit == SUIT_HEART || suit == SUIT_SPADE)) ||
 			(cardNum <= 5 && (suit == SUIT_CLUB || suit == SUIT_DIAMOND));
 
-	case 61:
+	case EXP_3_ID:
 		//Left: Odd 2-5, or Even heart or club
 		return (cardNum % 2 == 1 && cardNum <= 5) ||
 			(cardNum % 2 == 0 && (suit == SUIT_HEART || suit == SUIT_CLUB));
 
-	case 60:
+	case EXP_4_ID:
 		//Left: 2-5 diamon and club, or 6-9 even
 		return (cardNum <= 5 && (suit == SUIT_DIAMOND || suit == SUIT_CLUB)) ||
 			(cardNum >= 6 && cardNum % 2 == 0);
@@ -303,7 +303,7 @@ void updateExperiment(std::vector< int > &markerId, std::vector< std::vector<cv:
 		float mArea = markerAreaApprox(markerCorners[i]);
 		float mEccentricity = markerEccentricity(markerCorners[i]);
 
-		if (markerId[i] >= 60 && markerId[i] <= 63 && mEccentricity > 0.5 && mArea > 250.0f && mArea < 7500.0f) {
+		if (markerId[i] >= EXP_4_ID && markerId[i] <= EXP_1_ID && mEccentricity > 0.5 && mArea > 250.0f && mArea < 7500.0f) {
 			if (g_currentExperiment != markerId[i]) {
 				g_imgExpCompDirty = true;
 			}
@@ -324,7 +324,7 @@ int applyError(int realCardNum) {
 		offset = 32;
 	}
 
-	if (g_currentExperiment == 63 || g_currentExperiment == 60) {
+	if (g_currentExperiment == EXP_1_ID || g_currentExperiment == EXP_4_ID) {
 		switch (mistakes[realCardNum + offset]) {
 		case MISTAKE_BIGLITTLE:
 			fakeCardNum = fakeCardNum ^ 4; //Flips the high order bit of the card number ... so 0 becomes 4, 5 becomes 1, and so on.
@@ -466,7 +466,7 @@ void rotateCorners(std::vector<cv::Point2f> &rotatedCorners) {
 
 bool checkExpCondition(int experimentNum, int cardNum, int suitNum, int colNum, int rowNum) {
 	switch (experimentNum) {
-	case 63:
+	case EXP_1_ID:
 	default:
 		if (rowNum == 0 && cardNum % 2 == 1) return true;
 		if (rowNum == 2 && cardNum % 2 == 0) return true;
@@ -476,7 +476,7 @@ bool checkExpCondition(int experimentNum, int cardNum, int suitNum, int colNum, 
 		if (rowNum == 3 && colNum == 1 && (suitNum == SUIT_CLUB || suitNum == SUIT_HEART)) return true;
 		return false;
 
-	case 62:
+	case EXP_2_ID:
 		if (rowNum == 0 && (suitNum == SUIT_HEART || suitNum == SUIT_SPADE)) return true;
 		if (rowNum == 2 && (suitNum == SUIT_DIAMOND || suitNum == SUIT_CLUB)) return true;
 		if (rowNum == 1 && colNum == 0 && cardNum % 2 == 1) return true;
@@ -485,7 +485,7 @@ bool checkExpCondition(int experimentNum, int cardNum, int suitNum, int colNum, 
 		if (rowNum == 3 && colNum == 1 && cardNum >= 6) return true;
 		return false;
 
-	case 61:
+	case EXP_3_ID:
 		if (rowNum == 0 && cardNum % 2 == 1) return true;
 		if (rowNum == 2 && cardNum % 2 == 0) return true;
 		if (rowNum == 1 && colNum == 0 && cardNum <= 5) return true;
@@ -494,7 +494,7 @@ bool checkExpCondition(int experimentNum, int cardNum, int suitNum, int colNum, 
 		if (rowNum == 3 && colNum == 1 && (suitNum == SUIT_DIAMOND || suitNum == SUIT_SPADE)) return true;
 		return false;
 
-	case 60:
+	case EXP_4_ID:
 		if (rowNum == 0 && cardNum <= 5) return true;
 		if (rowNum == 2 && cardNum >= 6) return true;
 		if (rowNum == 1 && colNum == 0 && (suitNum == SUIT_DIAMOND || suitNum == SUIT_CLUB)) return true;
