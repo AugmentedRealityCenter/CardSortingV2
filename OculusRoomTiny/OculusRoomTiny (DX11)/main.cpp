@@ -50,7 +50,7 @@ extern int SetCamImage(ID3D11DeviceContext* DeviceContext,
 extern int CleanCamPlane();
 
 OVR::OvrvisionPro ovrvision;
-//OVR::OvrvisionAR* pOvrAR;
+
 int ovWidth = 0;
 int ovHeight = 0;
 int ovPixelsize = 4;
