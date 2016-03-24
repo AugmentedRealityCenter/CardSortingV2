@@ -752,6 +752,8 @@ static bool MainLoop(bool retryCreate)
 
     ovrvision.SetCameraSyncMode(false);
 
+    ovrvision.SetCameraWhiteBalanceAuto(true);
+
     InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight,
 		       1.0f);
   }
