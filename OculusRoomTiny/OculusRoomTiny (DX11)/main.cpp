@@ -577,6 +577,24 @@ void addOverlay(unsigned char* p, int ovWidth, int ovHeight,
   }
 }
 
+void addOverlay2(unsigned char* p, int ovWidth, int ovHeight,
+	cv::Mat &overlay, int xoffset) {
+  int spacing = 4;
+  for (int row = 0; row < ovHeight && row*spacing < overlay.rows;
+       row++) {
+    for (int col = 0; col < ovWidth && col*spacing < overlay.cols;
+	 col++) {
+      int pindex = (ovWidth - 256 + xoffset - (overlay.cols/spacing) + col)
+	+ (256 + row)*ovWidth;
+      int oindex = col*spacing + row*spacing*overlay.cols;
+      
+      for (int i = 0; i < 3; i++) {
+	p[4 * pindex + i] = overlay.data[3 * oindex + i];
+      }
+    }
+  }
+}
+
 void processMarkers(unsigned char* p, int ovWidth, int ovHeight,
 		    std::vector< int > &markerIds,
 		    std::vector< std::vector<cv::Point2f> > &markerCorners) {
@@ -613,46 +631,48 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight,
       fillMarkerWithImage(p, goLeft ? img_left : img_right, ovWidth, ovHeight,
 			  rotatedCorners);
     }
-    else {
-      if (g_imgExpCompDirty) {
-	//Will only do this if something has changed in our state
-	img_exps[g_currentExperiment % 60].copyTo(img_exp_composite);
-	if (g_visType == VIS_REASONING_ON_CARD) {
-	  //First, shade based on whether should go left or right
-	  if (goLeft) {
-	    img_exp_composite = img_exp_composite.mul(img_r[0], 1.0 / 255.0);
+    
+    if (g_imgExpCompDirty) {
+      //Will only do this if something has changed in our state
+      img_exps[g_currentExperiment % 60].copyTo(img_exp_composite);
+      if (g_visType == VIS_REASONING_ON_CARD) {
+	//First, shade based on whether should go left or right
+	if (goLeft) {
+	  img_exp_composite = img_exp_composite.mul(img_r[0], 1.0 / 255.0);
+	}
+	else {
+	  img_exp_composite = img_exp_composite.mul(img_l[0], 1.0 / 255.0);
+	}
+	
+	for (int row = 0; row < 4; row++) {
+	  if (!checkExpCondition(g_currentExperiment, 2 + g_currentCard % 8,
+				 g_currentCard / 8, 0, row)) {
+	    img_exp_composite = img_exp_composite.mul(img_l[row + 1],
+						      1.0 / 255.0);
 	  }
-	  else {
-	    img_exp_composite = img_exp_composite.mul(img_l[0], 1.0 / 255.0);
-	  }
-
-	  for (int row = 0; row < 4; row++) {
-	    if (!checkExpCondition(g_currentExperiment, 2 + g_currentCard % 8,
-				   g_currentCard / 8, 0, row)) {
-	      img_exp_composite = img_exp_composite.mul(img_l[row + 1],
-							1.0 / 255.0);
-	    }
-	    if (!checkExpCondition(g_currentExperiment, 2 + g_currentCard % 8,
-				   g_currentCard / 8, 1, row)) {
-	      img_exp_composite = img_exp_composite.mul(img_r[row + 1],
-							1.0 / 255.0);
-	    }
+	  if (!checkExpCondition(g_currentExperiment, 2 + g_currentCard % 8,
+				 g_currentCard / 8, 1, row)) {
+	    img_exp_composite = img_exp_composite.mul(img_r[row + 1],
+						      1.0 / 255.0);
 	  }
 	}
-	g_imgExpCompDirty = false;
       }
+      g_imgExpCompDirty = false;
+    }
+
+    if(g_visType == VIS_REASONING_ON_CARD){
       fillMarkerWithImage(p, img_exp_composite, ovWidth, ovHeight,
 			  rotatedCorners, 4.0f, true);
     }
   }
-  else if (g_visType == VIS_ARROWS_ON_BOX &&
+  /*  else if (g_visType == VIS_ARROWS_ON_BOX &&
 	   ((goLeft && boxIndices.first != -1) ||
 	    (!goLeft && boxIndices.second != -1))) {
     int index = goLeft ? boxIndices.first : boxIndices.second;
     std::vector<cv::Point2f> rotatedCorners = markerCorners[index];
 
     fillMarkerWithImage(p, img_up, ovWidth, ovHeight, rotatedCorners);
-  }
+    }*/
 }
 
 // return true to retry later (e.g. after display lost)
@@ -897,6 +917,8 @@ static bool MainLoop(bool retryCreate)
 		  processMarkers(p, ovWidth, ovHeight, markerIds,
 				 markerCorners);
 		  addOverlay(p, ovWidth, ovHeight, text_overlay);
+		  addOverlay2(p, ovWidth, ovHeight,
+			      img_exps[g_currentExperiment % 60], 64);
 		  SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 		}
 		else {
@@ -915,6 +937,8 @@ static bool MainLoop(bool retryCreate)
 		  processMarkers(p, ovWidth, ovHeight, markerIds,
 				 markerCorners);
 		  addOverlay(p, ovWidth, ovHeight, text_overlay);
+		  addOverlay2(p, ovWidth, ovHeight,
+			      img_exps[g_currentExperiment % 60], 0);
 		  SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 		}
 		RendererCamPlane(DIRECTX.Device, DIRECTX.Context);
