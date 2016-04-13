@@ -752,10 +752,14 @@ static bool MainLoop(bool retryCreate)
 
     ovrvision.SetCameraSyncMode(false);
 
+
     ovrvision.SetCameraWhiteBalanceAuto(true);
-    ovrvision.SetCameraBLC(100);
-    ovrvision.SetCameraGain(1);
-    ovrvision.SetCameraExposure(15000);
+    /*ovrvision.SetCameraBLC(32);
+    ovrvision.SetCameraGain(3);
+    ovrvision.SetCameraExposure(11896);
+	ovrvision.SetCameraWhiteBalanceR(1486);
+	ovrvision.SetCameraWhiteBalanceG(875);
+	ovrvision.SetCameraWhiteBalanceB(1200);*/
 
     InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight,
 		       1.0f);
