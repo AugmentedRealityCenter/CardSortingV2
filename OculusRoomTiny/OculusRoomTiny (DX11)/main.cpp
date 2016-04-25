@@ -167,13 +167,6 @@ struct OculusTexture
 #define MISTAKE_SUITPLUS 4
 #define MISTAKE_SUITMINUS 8
 
-int visTypeMapping[] = {
-  VIS_ARROWS_ON_CARD, //Marker 60, EXP_4
-  VIS_ARROWS_ON_CARD,
-  VIS_REASONING_ON_CARD,
-  VIS_REASONING_ON_CARD //Marker 63, EXP_1
-};
-
 //Index is card number, NOT order in which subject will see cards
 int mistakes[] = {
   //First, mistakes for experiment 63, which uses deck A
@@ -244,9 +237,20 @@ int mistakes[] = {
   MISTAKE_NONE
 };
 
-int g_currentExperiment = EXP_1_ID;
+int g_currentCritDeckMode = 63;
+int g_currentCriteria = 63;
+int g_currentVis = 63;
 int g_currentCard = 0; //2 of spades
-int g_visType = VIS_REASONING_ON_CARD;
+
+//First item is code on the Mode card, the second is the criterion/deck number, and third is the vis number
+int modeCritDeckLUT[4][3] =
+{
+	{60, 60, VIS_ARROWS_ON_CARD},
+	{61, 60, VIS_REASONING_ON_CARD},
+	{62, 63, VIS_ARROWS_ON_CARD},
+	{63, 63, VIS_REASONING_ON_CARD}
+};
+const int LUTStart = 60;
 
 bool g_imgExpCompDirty = true;
 
@@ -325,20 +329,18 @@ void updateExperiment(std::vector< int > &markerId,
 
     if (markerId[i] >= EXP_4_ID && markerId[i] <= EXP_1_ID &&
 	mEccentricity > 0.5 && mArea > 250.0f && mArea < 7500.0f) {
-      if (g_currentExperiment != markerId[i]) {
+      if (g_currentCritDeckMode != markerId[i]) {
 	g_imgExpCompDirty = true;
       }
-      g_currentExperiment = markerId[i];
+	  g_currentCritDeckMode = markerId[i];
+	  g_currentCriteria = modeCritDeckLUT[g_currentCritDeckMode-LUTStart][1];
+	  g_currentVis = modeCritDeckLUT[g_currentCritDeckMode-LUTStart][2];
 
       text_overlay.setTo(cv::Scalar(255, 255, 255));
-      cv::putText(text_overlay, "Exp " + std::to_string(g_currentExperiment),
+      cv::putText(text_overlay, "Exp " + std::to_string(g_currentCritDeckMode),
 		  cv::Point(0, 24), cv::FONT_HERSHEY_SIMPLEX, 1.0,
 		  cv::Scalar(255.0, 0.0, 0.0));
     }
-  }
-
-  if (g_currentExperiment >= EXP_4_ID && g_currentExperiment <= EXP_1_ID) {
-    g_visType = visTypeMapping[g_currentExperiment - EXP_4_ID];
   }
 }
 
@@ -347,11 +349,12 @@ int applyError(int realCardNum) {
   int suit = fakeCardNum / 8;
   int val = fakeCardNum % 8;
   int offset = 0;
-  if (g_currentExperiment == 60) {
+  if (g_currentCriteria == 60) {
     offset = 32;
   }
 
-  if (g_currentExperiment == EXP_1_ID || g_currentExperiment == EXP_4_ID) {
+  //Only make mistakes on g_currentCritDeckMode 60, 61, 62, 63
+  if (g_currentCriteria == EXP_1_ID || g_currentCriteria == EXP_4_ID) {
     switch (mistakes[realCardNum + offset]) {
     case MISTAKE_BIGLITTLE:
       fakeCardNum = fakeCardNum ^ 4; //Flips the high order bit of the card
@@ -604,10 +607,10 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight,
   std::pair<int, int> boxIndices = findBoxes(markerIds);
 
   //Check which way the current card should go
-  bool goLeft = cardGoesLeft(g_currentCard, g_currentExperiment);
+  bool goLeft = cardGoesLeft(g_currentCard, g_currentCriteria);
 
-  if ((g_visType == VIS_ARROWS_ON_CARD || g_visType == VIS_REASONING_ON_CARD
-       || g_visType == VIS_GUIDANCE_ON_CARD) && cardIndex != -1) {
+  if ((g_currentVis == VIS_ARROWS_ON_CARD || g_currentVis == VIS_REASONING_ON_CARD
+       || g_currentVis == VIS_GUIDANCE_ON_CARD) && cardIndex != -1) {
     std::vector<cv::Point2f> rotatedCorners = markerCorners[cardIndex];
 
     int mostLeftPt = 0;
@@ -627,15 +630,15 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight,
       rotateCorners(rotatedCorners);
     }
 		
-    if (g_visType == VIS_ARROWS_ON_CARD) {
+    if (g_currentVis == VIS_ARROWS_ON_CARD) {
       fillMarkerWithImage(p, goLeft ? img_left : img_right, ovWidth, ovHeight,
 			  rotatedCorners);
     }
     
     if (g_imgExpCompDirty) {
       //Will only do this if something has changed in our state
-      img_exps[g_currentExperiment % 60].copyTo(img_exp_composite);
-      if (g_visType == VIS_REASONING_ON_CARD) {
+      img_exps[g_currentCriteria % 60].copyTo(img_exp_composite);
+      if (g_currentVis == VIS_REASONING_ON_CARD) {
 	//First, shade based on whether should go left or right
 	if (goLeft) {
 	  img_exp_composite = img_exp_composite.mul(img_r[0], 1.0 / 255.0);
@@ -645,12 +648,12 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight,
 	}
 	
 	for (int row = 0; row < 4; row++) {
-	  if (!checkExpCondition(g_currentExperiment, 2 + g_currentCard % 8,
+	  if (!checkExpCondition(g_currentCriteria, 2 + g_currentCard % 8,
 				 g_currentCard / 8, 0, row)) {
 	    img_exp_composite = img_exp_composite.mul(img_l[row + 1],
 						      1.0 / 255.0);
 	  }
-	  if (!checkExpCondition(g_currentExperiment, 2 + g_currentCard % 8,
+	  if (!checkExpCondition(g_currentCriteria, 2 + g_currentCard % 8,
 				 g_currentCard / 8, 1, row)) {
 	    img_exp_composite = img_exp_composite.mul(img_r[row + 1],
 						      1.0 / 255.0);
@@ -660,7 +663,7 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight,
       g_imgExpCompDirty = false;
     }
 
-    if(g_visType == VIS_REASONING_ON_CARD){
+    if(g_currentVis  == VIS_REASONING_ON_CARD){
       fillMarkerWithImage(p, img_exp_composite, ovWidth, ovHeight,
 			  rotatedCorners, 4.0f, true);
     }
@@ -810,7 +813,7 @@ static bool MainLoop(bool retryCreate)
 
   text_overlay.create(32, 150, CV_8UC3);
   text_overlay.setTo(cv::Scalar(255, 255, 255));
-  cv::putText(text_overlay, "Exp " + std::to_string(g_currentExperiment),
+  cv::putText(text_overlay, "Exp " + std::to_string(g_currentCritDeckMode),
 	      cv::Point(0, 24), cv::FONT_HERSHEY_SIMPLEX, 1.0,
 	      cv::Scalar(255.0, 0.0, 0.0));
 
@@ -918,7 +921,7 @@ static bool MainLoop(bool retryCreate)
 				 markerCorners);
 		  addOverlay(p, ovWidth, ovHeight, text_overlay);
 		  addOverlay2(p, ovWidth, ovHeight,
-			      img_exps[g_currentExperiment % 60], 64);
+			      img_exps[g_currentCriteria % 60], 64);
 		  SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 		}
 		else {
@@ -938,7 +941,7 @@ static bool MainLoop(bool retryCreate)
 				 markerCorners);
 		  addOverlay(p, ovWidth, ovHeight, text_overlay);
 		  addOverlay2(p, ovWidth, ovHeight,
-			      img_exps[g_currentExperiment % 60], 0);
+			      img_exps[g_currentCriteria % 60], 0);
 		  SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 		}
 		RendererCamPlane(DIRECTX.Device, DIRECTX.Context);
