@@ -349,7 +349,7 @@ struct DirectX11
 static struct DirectX11 DIRECTX;
 
 //------------------------------------------------------------
-struct Texture
+/*struct Texture
 {
 	ID3D11Texture2D            * Tex;
 	ID3D11ShaderResourceView   * TexSv;
