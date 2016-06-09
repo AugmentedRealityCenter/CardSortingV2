@@ -145,7 +145,7 @@ struct OculusTexture
 
 #define VIS_ARROWS_ON_CARD 0
 #define VIS_REASONING_ON_CARD 1
-#define VIS_ARROWS_ON_BOX 2
+//#define VIS_ARROWS_ON_BOX 2
 
 
 #define SUIT_SPADE 0
@@ -268,6 +268,8 @@ bool pointInTriangle(cv::Point2f &p, cv::Point2f &a, cv::Point2f &b,
 	return sameSide(p, a, b, c) && sameSide(p, b, a, c) && sameSide(p, c, a, b);
 }
 
+//Decide which box the card should go to
+//If it is true, the card goes left, else it goes right
 bool cardGoesLeft(int cardId, int experimentId) {
 	int cardNum = (cardId % 8) + 2; //2-9 of each suit
 	int suit = cardId / 8;
@@ -344,6 +346,8 @@ void updateExperiment(std::vector< int > &markerId,
 	}
 }
 
+//Input: the real number of a card
+//Output: the fake number of that card which will be seen by the user, if it is assigned to any error
 int applyError(int realCardNum) {
 	int fakeCardNum = realCardNum;
 	int suit = fakeCardNum / 8;
@@ -566,6 +570,7 @@ bool checkExpCondition(int experimentNum, int cardNum, int suitNum,
 	return false;
 }
 
+//Overlay that shows what experiment we are doing
 void addOverlay(unsigned char* p, int ovWidth, int ovHeight,
 	cv::Mat &overlay) {
 	for (int row = 0; row < ovHeight && row < overlay.rows; row++) {
@@ -580,6 +585,7 @@ void addOverlay(unsigned char* p, int ovWidth, int ovHeight,
 	}
 }
 
+//Overlay that shows the reasoning to sort the card of that experiment
 void addOverlay2(unsigned char* p, int ovWidth, int ovHeight,
 	cv::Mat &overlay, int xoffset) {
 	int spacing = 4;
