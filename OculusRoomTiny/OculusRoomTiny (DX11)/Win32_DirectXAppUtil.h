@@ -461,7 +461,7 @@ struct Texture
 };
 
 //-----------------------------------------------------
-struct Material
+/*struct Material
 {
 	ID3D11VertexShader      * D3DVert;
 	ID3D11PixelShader       * D3DPix;
@@ -572,7 +572,7 @@ struct Vertex
 };
 
 //-----------------------------------------------------------------------
-struct TriangleSet
+/*struct TriangleSet
 {
 	int       numVertices, numIndices, maxBuffer;
 	Vertex    * Vertices;
@@ -710,7 +710,7 @@ struct Model
 		DIRECTX.Context->DrawIndexed((UINT)NumIndices, 0, 0);
 	}
 };
-
+*/
 //-----------------------------------------------------------
 struct Camera
 {
@@ -734,7 +734,7 @@ struct Camera
         _aligned_free(p);
     }
 };
-
+/*
 //----------------------------------------------------
 struct Utility
 {
@@ -747,7 +747,6 @@ struct Utility
 		OutputDebugStringA(string_text);
 	}
 } static Util;
-
+*/
 #endif // OVR_Win32_DirectXAppUtil_h
-
 
