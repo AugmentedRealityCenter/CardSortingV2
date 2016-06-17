@@ -57,7 +57,7 @@ int ovPixelsize = 4;
 
 cv::Mat img_left;
 cv::Mat img_right;
-cv::Mat img_up;
+//cv::Mat img_up;
 std::vector<cv::Mat > img_exps;
 cv::Mat img_exp_composite;
 std::vector<cv::Mat > img_l;
@@ -158,8 +158,8 @@ struct OculusTexture
 #define EXP_3_ID 61
 #define EXP_4_ID 60
 
-#define LEFT_BOX_ID 58
-#define RIGHT_BOX_ID 59
+//#define LEFT_BOX_ID 58
+//#define RIGHT_BOX_ID 59
 
 #define MISTAKE_NONE 0
 #define MISTAKE_EVENODD 1
@@ -239,7 +239,7 @@ int mistakes[] = {
 
 int g_currentCritDeckMode = 63;
 int g_currentCriteria = 63;
-int g_currentVis = 63;
+int g_currentVis = 0;
 int g_currentCard = 0; //2 of spades
 
 //First item is code on the Mode card, the second is the criterion/deck number, and third is the vis number
@@ -407,7 +407,7 @@ int updateCard(std::vector< int > &markerId,
 	return index;
 }
 
-std::pair<int, int> findBoxes(std::vector< int > &markerId) {
+/*std::pair<int, int> findBoxes(std::vector< int > &markerId) {
 	int left_index = -1;
 	int right_index = -1;
 	for (unsigned int i = 0; i < markerId.size(); i++) {
@@ -421,7 +421,7 @@ std::pair<int, int> findBoxes(std::vector< int > &markerId) {
 
 	return std::make_pair(left_index, right_index);
 }
-
+*/
 cv::Point2f origPts[] = {
   cv::Point2f(0, 0),
   cv::Point2f(1, 0),
@@ -610,7 +610,8 @@ void processMarkers(unsigned char* p, int ovWidth, int ovHeight,
 	updateExperiment(markerIds, markerCorners); //Switch experiments
 	int cardIndex = updateCard(markerIds, markerCorners); //Switch currentCard,
 	//if necessary, and get index for rendering
-	std::pair<int, int> boxIndices = findBoxes(markerIds);
+	
+	//std::pair<int, int> boxIndices = findBoxes(markerIds);
 
 	//Check which way the current card should go
 	bool goLeft = cardGoesLeft(g_currentCard, g_currentCriteria);
@@ -796,7 +797,7 @@ static bool MainLoop(bool retryCreate)
 
 	img_left = cv::imread("left.png", CV_LOAD_IMAGE_COLOR);
 	img_right = cv::imread("right.png", CV_LOAD_IMAGE_COLOR);
-	img_up = cv::imread("up.png", CV_LOAD_IMAGE_COLOR);
+	//img_up = cv::imread("up.png", CV_LOAD_IMAGE_COLOR);
 
 	img_exps.push_back(cv::imread("exp60.png", CV_LOAD_IMAGE_COLOR));
 	img_exps.push_back(cv::imread("exp61.png", CV_LOAD_IMAGE_COLOR));
