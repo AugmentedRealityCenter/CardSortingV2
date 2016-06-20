@@ -270,18 +270,18 @@ bool pointInTriangle(cv::Point2f &p, cv::Point2f &a, cv::Point2f &b,
 
 //Decide which box the card should go to
 //If it is true, the card goes left, else it goes right
-bool cardGoesLeft(int cardId, int experimentId) {
+bool cardGoesLeft(int cardId, int currentCrit) {
 	int cardNum = (cardId % 8) + 2; //2-9 of each suit
 	int suit = cardId / 8;
 
-	switch (experimentId) {
-	case EXP_1_ID:
+	switch (currentCrit) {
+	case EXP_1_ID: 
 	default:
 		//Left: Odd heart and spade, even space and diamond
 		return (cardNum % 2 == 1 && (suit == SUIT_HEART || suit == SUIT_SPADE)) ||
 			(cardNum % 2 == 0 && (suit == SUIT_SPADE || suit == SUIT_DIAMOND));
 
-	case EXP_2_ID:
+	/*case EXP_2_ID:
 		//Left: Heart and Spade Odd, or Club and Diamond 2-5
 		return (cardNum % 2 == 1 && (suit == SUIT_HEART || suit == SUIT_SPADE)) ||
 			(cardNum <= 5 && (suit == SUIT_CLUB || suit == SUIT_DIAMOND));
@@ -290,6 +290,7 @@ bool cardGoesLeft(int cardId, int experimentId) {
 		//Left: Odd 2-5, or Even heart or club
 		return (cardNum % 2 == 1 && cardNum <= 5) ||
 			(cardNum % 2 == 0 && (suit == SUIT_HEART || suit == SUIT_CLUB));
+	*/
 
 	case EXP_4_ID:
 		//Left: 2-5 diamon and club, or 6-9 even
@@ -516,9 +517,9 @@ void rotateCorners(std::vector<cv::Point2f> &rotatedCorners) {
 	rotatedCorners[3] = t;
 }
 
-bool checkExpCondition(int experimentNum, int cardNum, int suitNum,
+bool checkExpCondition(int currentCrit, int cardNum, int suitNum,
 	int colNum, int rowNum) {
-	switch (experimentNum) {
+	switch (currentCrit) {
 	case EXP_1_ID:
 	default:
 		if (rowNum == 0 && cardNum % 2 == 1) return true;
@@ -533,7 +534,7 @@ bool checkExpCondition(int experimentNum, int cardNum, int suitNum,
 			(suitNum == SUIT_CLUB || suitNum == SUIT_HEART)) return true;
 		return false;
 
-	case EXP_2_ID:
+	/*case EXP_2_ID:
 		if (rowNum == 0 &&
 			(suitNum == SUIT_HEART || suitNum == SUIT_SPADE)) return true;
 		if (rowNum == 2 &&
@@ -554,7 +555,8 @@ bool checkExpCondition(int experimentNum, int cardNum, int suitNum,
 		if (rowNum == 3 && colNum == 1 &&
 			(suitNum == SUIT_DIAMOND || suitNum == SUIT_SPADE)) return true;
 		return false;
-
+	*/
+	
 	case EXP_4_ID:
 		if (rowNum == 0 && cardNum <= 5) return true;
 		if (rowNum == 2 && cardNum >= 6) return true;
