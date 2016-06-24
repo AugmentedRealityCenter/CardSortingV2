@@ -158,6 +158,9 @@ struct OculusTexture
 #define EXP_3_ID 61
 #define EXP_4_ID 60
 
+#define CRITERIA_1 63
+#define CRITERIA_2 60
+
 //#define LEFT_BOX_ID 58
 //#define RIGHT_BOX_ID 59
 
@@ -237,18 +240,18 @@ int mistakes[] = {
 	MISTAKE_NONE
 };
 
-int g_currentCritDeckMode = 63;
-int g_currentCriteria = 63;
-int g_currentVis = 0;
+int g_currentCritDeckMode = EXP_1_ID;
+int g_currentCriteria = CRITERIA_1;
+int g_currentVis = VIS_ARROWS_ON_CARD;
 int g_currentCard = 0; //2 of spades
 
 //First item is code on the Mode card, the second is the criterion/deck number, and third is the vis number
 int modeCritDeckLUT[4][3] =
 {
-	{60, 60, VIS_ARROWS_ON_CARD},
-	{61, 60, VIS_REASONING_ON_CARD},
-	{62, 63, VIS_ARROWS_ON_CARD},
-	{63, 63, VIS_REASONING_ON_CARD}
+	{EXP_4_ID, CRITERIA_2, VIS_ARROWS_ON_CARD},
+	{EXP_3_ID, CRITERIA_2, VIS_REASONING_ON_CARD},
+	{EXP_2_ID, CRITERIA_1, VIS_ARROWS_ON_CARD},
+	{EXP_1_ID, CRITERIA_1, VIS_REASONING_ON_CARD}
 };
 const int LUTStart = 60;
 
@@ -281,7 +284,7 @@ bool cardGoesLeft(int cardId, int currentCrit) {
 	int suit = cardId / 8;
 
 	switch (currentCrit) {
-	case EXP_1_ID: 
+	case  CRITERIA_1:
 	default:
 		//Left: Odd heart and spade, even space and diamond
 		return (cardNum % 2 == 1 && (suit == SUIT_HEART || suit == SUIT_SPADE)) ||
@@ -298,7 +301,7 @@ bool cardGoesLeft(int cardId, int currentCrit) {
 			(cardNum % 2 == 0 && (suit == SUIT_HEART || suit == SUIT_CLUB));
 	*/
 
-	case EXP_4_ID:
+	case CRITERIA_2:
 		//Left: 2-5 diamon and club, or 6-9 even
 		return (cardNum <= 5 && (suit == SUIT_DIAMOND || suit == SUIT_CLUB)) ||
 			(cardNum >= 6 && cardNum % 2 == 0);
@@ -385,7 +388,7 @@ int applyError(int realCardNum) {
 	int suit = fakeCardNum / 8;
 	int val = fakeCardNum % 8;
 	int offset = 0;
-	if (g_currentCriteria == 60) {
+	if (g_currentCriteria == CRITERIA_2) {
 		offset = 32;
 	}
 
@@ -586,7 +589,7 @@ void rotateCorners(std::vector<cv::Point2f> &rotatedCorners) {
 bool checkExpCondition(int currentCrit, int cardNum, int suitNum,
 	int colNum, int rowNum) {
 	switch (currentCrit) {
-	case EXP_1_ID:
+	case CRITERIA_1:
 	default:
 		if (rowNum == 0 && cardNum % 2 == 1) return true;
 		if (rowNum == 2 && cardNum % 2 == 0) return true;
@@ -623,7 +626,7 @@ bool checkExpCondition(int currentCrit, int cardNum, int suitNum,
 		return false;
 	*/
 	
-	case EXP_4_ID:
+	case CRITERIA_2:
 		if (rowNum == 0 && cardNum <= 5) return true;
 		if (rowNum == 2 && cardNum >= 6) return true;
 		if (rowNum == 1 && colNum == 0 &&
