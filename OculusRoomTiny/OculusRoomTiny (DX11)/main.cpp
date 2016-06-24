@@ -57,7 +57,7 @@ int ovPixelsize = 4;
 
 cv::Mat img_left;
 cv::Mat img_right;
-cv::Mat img_up;
+//cv::Mat img_up;
 std::vector<cv::Mat > img_exps;
 cv::Mat img_exp_composite;
 std::vector<cv::Mat > img_l;
@@ -158,8 +158,8 @@ struct OculusTexture
 #define EXP_3_ID 61
 #define EXP_4_ID 60
 
-#define LEFT_BOX_ID 58
-#define RIGHT_BOX_ID 59
+//#define LEFT_BOX_ID 58
+//#define RIGHT_BOX_ID 59
 
 #define MISTAKE_NONE 0
 #define MISTAKE_EVENODD 1
@@ -239,7 +239,7 @@ int mistakes[] = {
 
 int g_currentCritDeckMode = 63;
 int g_currentCriteria = 63;
-int g_currentVis = 63;
+int g_currentVis = 0;
 int g_currentCard = 0; //2 of spades
 
 //First item is code on the Mode card, the second is the criterion/deck number, and third is the vis number
@@ -268,20 +268,26 @@ bool pointInTriangle(cv::Point2f &p, cv::Point2f &a, cv::Point2f &b,
 	return sameSide(p, a, b, c) && sameSide(p, b, a, c) && sameSide(p, c, a, b);
 }
 
-//Decide which box the card should go to
-//If it is true, the card goes left, else it goes right
-bool cardGoesLeft(int cardId, int experimentId) {
+/**
+ @brief	Decide if the card should go to left box or not.
+
+ @param	cardId	   	Identifier for the card.
+ @param	currentCrit	The current criteria.
+
+ @return True if it meets the requirement, false if not 
+ */
+bool cardGoesLeft(int cardId, int currentCrit) {
 	int cardNum = (cardId % 8) + 2; //2-9 of each suit
 	int suit = cardId / 8;
 
-	switch (experimentId) {
-	case EXP_1_ID:
+	switch (currentCrit) {
+	case EXP_1_ID: 
 	default:
 		//Left: Odd heart and spade, even space and diamond
 		return (cardNum % 2 == 1 && (suit == SUIT_HEART || suit == SUIT_SPADE)) ||
 			(cardNum % 2 == 0 && (suit == SUIT_SPADE || suit == SUIT_DIAMOND));
 
-	case EXP_2_ID:
+	/*case EXP_2_ID:
 		//Left: Heart and Spade Odd, or Club and Diamond 2-5
 		return (cardNum % 2 == 1 && (suit == SUIT_HEART || suit == SUIT_SPADE)) ||
 			(cardNum <= 5 && (suit == SUIT_CLUB || suit == SUIT_DIAMOND));
@@ -290,6 +296,7 @@ bool cardGoesLeft(int cardId, int experimentId) {
 		//Left: Odd 2-5, or Even heart or club
 		return (cardNum % 2 == 1 && cardNum <= 5) ||
 			(cardNum % 2 == 0 && (suit == SUIT_HEART || suit == SUIT_CLUB));
+	*/
 
 	case EXP_4_ID:
 		//Left: 2-5 diamon and club, or 6-9 even
@@ -298,11 +305,26 @@ bool cardGoesLeft(int cardId, int experimentId) {
 	}
 }
 
+/**
+ @brief	Calculate the distance between two points
+
+ @param	pt1	The first point.
+ @param	pt2	The second point.
+
+ @return The distance.
+ */
 float dist(cv::Point2f pt1, cv::Point2f pt2) {
 	cv::Point2f diff = pt1 - pt2;
 	return sqrt(diff.x*diff.x + diff.y*diff.y);
 }
 
+/**
+ @brief	Calculate the approximate area of a marker.
+
+ @param	markerCorners A set of 4 corners of the marker.
+
+ @return The area
+ */
 float markerAreaApprox(std::vector< cv::Point2f > markerCorners) {
 	float distx = dist(markerCorners[0], markerCorners[1]);
 	float disty = dist(markerCorners[0], markerCorners[3]);
@@ -322,7 +344,12 @@ float markerEccentricity(std::vector< cv::Point2f > markerCorners) {
 	return eccentricity;
 }
 
-/* Scan marker ids to see which experiment we are doing */
+/**
+ @brief	Scan marker ids to see which experiment we are doing
+
+ @param [in,out]	markerId	 	Identifier for the marker.
+ @param [in,out]	markerCorners	The marker corners.
+ */
 void updateExperiment(std::vector< int > &markerId,
 	std::vector< std::vector<cv::Point2f> > &markerCorners) {
 	for (unsigned int i = 0; i < markerId.size(); i++) {
@@ -346,8 +373,13 @@ void updateExperiment(std::vector< int > &markerId,
 	}
 }
 
-//Input: the real number of a card
-//Output: the fake number of that card which will be seen by the user, if it is assigned to any error
+/**
+ @brief	Applies error to a card.
+
+ @param	realCardNum	The real ID card number.
+
+ @return  the fake ID number of that card if it is assigned to any error, real ID number if it is not
+ */
 int applyError(int realCardNum) {
 	int fakeCardNum = realCardNum;
 	int suit = fakeCardNum / 8;
@@ -384,9 +416,15 @@ int applyError(int realCardNum) {
 	return fakeCardNum;
 }
 
-/* Scan marker ids to see which card we are looking at.
- * Return the index where the card was found, for use in lookup into
- * markerCorners */
+
+/**
+ @brief	Scan marker ids to see which card we are looking at.
+
+ @param [in,out]	markerId	 	Identifier for the marker.
+ @param [in,out]	markerCorners	The marker corners.
+
+ @return	the index where the card was found, for use in lookup into markerCorners.
+ */
 int updateCard(std::vector< int > &markerId,
 	std::vector< std::vector<cv::Point2f> > &markerCorners) {
 	int index = -1;
@@ -407,7 +445,7 @@ int updateCard(std::vector< int > &markerId,
 	return index;
 }
 
-std::pair<int, int> findBoxes(std::vector< int > &markerId) {
+/*std::pair<int, int> findBoxes(std::vector< int > &markerId) {
 	int left_index = -1;
 	int right_index = -1;
 	for (unsigned int i = 0; i < markerId.size(); i++) {
@@ -421,6 +459,7 @@ std::pair<int, int> findBoxes(std::vector< int > &markerId) {
 
 	return std::make_pair(left_index, right_index);
 }
+*/
 
 cv::Point2f origPts[] = {
   cv::Point2f(0, 0),
@@ -429,6 +468,17 @@ cv::Point2f origPts[] = {
   cv::Point2f(0, 1)
 };
 
+/**
+ @brief	Fill marker with image.
+
+ @param [in,out]	target 	
+ @param [in,out]	source  The image that will be added
+ @param	ovWidth			   	Width of the ovr image.
+ @param	ovHeight		   	Height of the ovr image.
+ @param [in,out]	corners	The marker corners.
+ @param	expansion		   	(Optional)
+ @param	clipTop			   	(Optional)
+ */
 void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth,
 	int ovHeight, std::vector<cv::Point2f> &corners,
 	float expansion = 1.0f, bool clipTop = false) {
@@ -508,6 +558,12 @@ void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth,
 	}
 }
 
+/**
+ @brief	Rotate corners' position (Clockwise)
+
+ @param [in,out]	rotatedCorners	List of 4 corners
+ */
+
 void rotateCorners(std::vector<cv::Point2f> &rotatedCorners) {
 	cv::Point2f t = rotatedCorners[0];
 	for (int j = 0; j < 3; j++) {
@@ -516,9 +572,20 @@ void rotateCorners(std::vector<cv::Point2f> &rotatedCorners) {
 	rotatedCorners[3] = t;
 }
 
-bool checkExpCondition(int experimentNum, int cardNum, int suitNum,
+/**
+ @brief	Check exponent condition.
+
+ @param	currentCrit	The current card criteria.
+ @param	cardNum	   	The card number (2-9).
+ @param	suitNum	   	The suit number.
+ @param	colNum	   	The column number (0 is left, 1 is right)
+ @param	rowNum	   	The row number (Each row is equivalent to a specific requirement) (There are 4 rows)
+
+ @return	true if it succeeds, false if it fails.
+ */
+bool checkExpCondition(int currentCrit, int cardNum, int suitNum,
 	int colNum, int rowNum) {
-	switch (experimentNum) {
+	switch (currentCrit) {
 	case EXP_1_ID:
 	default:
 		if (rowNum == 0 && cardNum % 2 == 1) return true;
@@ -533,7 +600,7 @@ bool checkExpCondition(int experimentNum, int cardNum, int suitNum,
 			(suitNum == SUIT_CLUB || suitNum == SUIT_HEART)) return true;
 		return false;
 
-	case EXP_2_ID:
+	/*case EXP_2_ID:
 		if (rowNum == 0 &&
 			(suitNum == SUIT_HEART || suitNum == SUIT_SPADE)) return true;
 		if (rowNum == 2 &&
@@ -554,7 +621,8 @@ bool checkExpCondition(int experimentNum, int cardNum, int suitNum,
 		if (rowNum == 3 && colNum == 1 &&
 			(suitNum == SUIT_DIAMOND || suitNum == SUIT_SPADE)) return true;
 		return false;
-
+	*/
+	
 	case EXP_4_ID:
 		if (rowNum == 0 && cardNum <= 5) return true;
 		if (rowNum == 2 && cardNum >= 6) return true;
@@ -570,7 +638,14 @@ bool checkExpCondition(int experimentNum, int cardNum, int suitNum,
 	return false;
 }
 
-//Overlay that shows what experiment we are doing
+/**
+ @brief	Adds an overlay that shows what experiment we are doing.
+
+ @param [in,out]	p	   	
+ @param	ovWidth			   	Width of the ovr image.
+ @param	ovHeight		   	Height of the ovr image.
+ @param [in,out]	overlay	The overlay.
+ */
 void addOverlay(unsigned char* p, int ovWidth, int ovHeight,
 	cv::Mat &overlay) {
 	for (int row = 0; row < ovHeight && row < overlay.rows; row++) {
@@ -585,7 +660,15 @@ void addOverlay(unsigned char* p, int ovWidth, int ovHeight,
 	}
 }
 
-//Overlay that shows the reasoning to sort the card of that experiment
+/**
+ @brief	Adds an overlay that shows the reasoning to sort the card of that experiment.
+
+ @param [in,out]	p	   	
+ @param	ovWidth			   	Width of the ovr image.
+ @param	ovHeight		   	Height of the ovr image.
+ @param [in,out]	overlay	The overlay.
+ @param	xoffset			   	
+ */
 void addOverlay2(unsigned char* p, int ovWidth, int ovHeight,
 	cv::Mat &overlay, int xoffset) {
 	int spacing = 4;
@@ -604,13 +687,23 @@ void addOverlay2(unsigned char* p, int ovWidth, int ovHeight,
 	}
 }
 
+/**
+ @brief	Process the markers.
+
+ @param [in,out]	p			 	
+ @param	ovWidth					 	Width of the ovr image.
+ @param	ovHeight				 	Height of the ovr image.
+ @param [in,out]	markerIds	 	Identifiers for the markers.
+ @param [in,out]	markerCorners	The marker corners.
+ */
 void processMarkers(unsigned char* p, int ovWidth, int ovHeight,
 	std::vector< int > &markerIds,
 	std::vector< std::vector<cv::Point2f> > &markerCorners) {
 	updateExperiment(markerIds, markerCorners); //Switch experiments
 	int cardIndex = updateCard(markerIds, markerCorners); //Switch currentCard,
 	//if necessary, and get index for rendering
-	std::pair<int, int> boxIndices = findBoxes(markerIds);
+	
+	//std::pair<int, int> boxIndices = findBoxes(markerIds);
 
 	//Check which way the current card should go
 	bool goLeft = cardGoesLeft(g_currentCard, g_currentCriteria);
@@ -783,20 +876,14 @@ static bool MainLoop(bool retryCreate)
 
 
 		ovrvision.SetCameraWhiteBalanceAuto(true);
-		/*ovrvision.SetCameraBLC(32);
-		ovrvision.SetCameraGain(3);
-		ovrvision.SetCameraExposure(11896);
-		ovrvision.SetCameraWhiteBalanceR(1486);
-		ovrvision.SetCameraWhiteBalanceG(875);
-		ovrvision.SetCameraWhiteBalanceB(1200);*/
-
+		
 		InitializeCamPlane(DIRECTX.Device, DIRECTX.Context, ovWidth, ovHeight,
 			1.0f);
 	}
 
 	img_left = cv::imread("left.png", CV_LOAD_IMAGE_COLOR);
 	img_right = cv::imread("right.png", CV_LOAD_IMAGE_COLOR);
-	img_up = cv::imread("up.png", CV_LOAD_IMAGE_COLOR);
+	//img_up = cv::imread("up.png", CV_LOAD_IMAGE_COLOR);
 
 	img_exps.push_back(cv::imread("exp60.png", CV_LOAD_IMAGE_COLOR));
 	img_exps.push_back(cv::imread("exp61.png", CV_LOAD_IMAGE_COLOR));
