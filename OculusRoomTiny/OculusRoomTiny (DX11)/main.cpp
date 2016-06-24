@@ -350,11 +350,11 @@ float markerEccentricity(std::vector< cv::Point2f > markerCorners) {
 /**
  @brief	Scan marker ids to see which experiment we are doing
 
- @param [in,out]	markerId	 	Identifier for the marker.
- @param [in,out]	markerCorners	The marker corners.
+ @param markerId	 	Identifier for the marker.
+ @param markerCorners	The marker corners.
  */
-void updateExperiment(std::vector< int > &markerId,
-	std::vector< std::vector<cv::Point2f> > &markerCorners) {
+void updateExperiment(const std::vector< int > &markerId,
+	const std::vector< std::vector<cv::Point2f> > &markerCorners) {
 	for (unsigned int i = 0; i < markerId.size(); i++) {
 		float mArea = markerAreaApprox(markerCorners[i]);
 		float mEccentricity = markerEccentricity(markerCorners[i]);
@@ -419,17 +419,16 @@ int applyError(int realCardNum) {
 	return fakeCardNum;
 }
 
-
 /**
  @brief	Scan marker ids to see which card we are looking at.
 
- @param [in,out]	markerId	 	Identifier for the marker.
- @param [in,out]	markerCorners	The marker corners.
+ @param	markerId	 	Identifier for the marker.
+ @param	markerCorners	The marker corners.
 
  @return	the index where the card was found, for use in lookup into markerCorners.
  */
-int updateCard(std::vector< int > &markerId,
-	std::vector< std::vector<cv::Point2f> > &markerCorners) {
+int updateCard(const std::vector< int > &markerId,
+	const std::vector< std::vector<cv::Point2f> > &markerCorners) {
 	int index = -1;
 	for (unsigned int i = 0; i < markerId.size(); i++) {
 		float mArea = markerAreaApprox(markerCorners[i]);
@@ -472,18 +471,19 @@ cv::Point2f origPts[] = {
 };
 
 /**
+
  @brief	Fill marker with image.
 
- @param [in,out]	target 	
- @param [in,out]	source  The image that will be added
- @param	ovWidth			   	Width of the ovr image.
- @param	ovHeight		   	Height of the ovr image.
- @param [in,out]	corners	The marker corners.
- @param	expansion		   	(Optional)
- @param	clipTop			   	(Optional)
+ @param [in,out]	target	
+ @param	source			  	The image that will be added.
+ @param	ovWidth			  	Width of the ovr image.
+ @param	ovHeight		  	Height of the ovr image.
+ @param	corners			  	The marker corners.
+ @param	expansion		  	(Optional)
+ @param	clipTop			  	(Optional)
  */
-void fillMarkerWithImage(unsigned char* target, cv::Mat &source, int ovWidth,
-	int ovHeight, std::vector<cv::Point2f> &corners,
+void fillMarkerWithImage(unsigned char* target, const cv::Mat &source, int ovWidth,
+	int ovHeight, const std::vector<cv::Point2f> &corners,
 	float expansion = 1.0f, bool clipTop = false) {
 	if (corners.size() >= 4) {
 		//First, find the Region Of Interest that might need to be filled
@@ -647,10 +647,10 @@ bool checkExpCondition(int currentCrit, int cardNum, int suitNum,
  @param [in,out]	p	   	
  @param	ovWidth			   	Width of the ovr image.
  @param	ovHeight		   	Height of the ovr image.
- @param [in,out]	overlay	The overlay.
+ @param overlay	            The overlay.
  */
 void addOverlay(unsigned char* p, int ovWidth, int ovHeight,
-	cv::Mat &overlay) {
+	const cv::Mat &overlay) {
 	for (int row = 0; row < ovHeight && row < overlay.rows; row++) {
 		for (int col = 0; col < ovWidth && col < overlay.cols; col++) {
 			int pindex = (ovWidth / 2 - overlay.cols / 2 + col) + (64 + row)*ovWidth;
@@ -669,11 +669,11 @@ void addOverlay(unsigned char* p, int ovWidth, int ovHeight,
  @param [in,out]	p	   	
  @param	ovWidth			   	Width of the ovr image.
  @param	ovHeight		   	Height of the ovr image.
- @param [in,out]	overlay	The overlay.
+ @param overlay	            The overlay.
  @param	xoffset			   	
  */
 void addOverlay2(unsigned char* p, int ovWidth, int ovHeight,
-	cv::Mat &overlay, int xoffset) {
+	const cv::Mat &overlay, int xoffset) {
 	int spacing = 4;
 	for (int row = 0; row < ovHeight && row*spacing < overlay.rows;
 		row++) {
@@ -690,18 +690,19 @@ void addOverlay2(unsigned char* p, int ovWidth, int ovHeight,
 	}
 }
 
-/**
+/** 
  @brief	Process the markers.
 
- @param [in,out]	p			 	
- @param	ovWidth					 	Width of the ovr image.
- @param	ovHeight				 	Height of the ovr image.
- @param [in,out]	markerIds	 	Identifiers for the markers.
- @param [in,out]	markerCorners	The marker corners.
+ @param [in,out]	p	
+ @param	ovWidth		 	Width of the ovr image.
+ @param	ovHeight	 	Height of the ovr image.
+ @param	markerIds	 	Identifiers for the markers.
+ @param	markerCorners	The marker corners.
  */
+
 void processMarkers(unsigned char* p, int ovWidth, int ovHeight,
-	std::vector< int > &markerIds,
-	std::vector< std::vector<cv::Point2f> > &markerCorners) {
+	const std::vector< int > &markerIds,
+	const std::vector< std::vector<cv::Point2f> > &markerCorners) {
 	updateExperiment(markerIds, markerCorners); //Switch experiments
 	int cardIndex = updateCard(markerIds, markerCorners); //Switch currentCard,
 	//if necessary, and get index for rendering
