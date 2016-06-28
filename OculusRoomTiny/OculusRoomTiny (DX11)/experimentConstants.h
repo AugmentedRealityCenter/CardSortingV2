@@ -28,7 +28,7 @@ constexpr int MISTAKE_SUITPLUS = 4;
 constexpr int MISTAKE_SUITMINUS = 8;
 
 //Index is card number, NOT order in which subject will see cards
-constexpr int mistakes[] = {
+constexpr int MISTAKES[] = {
 	//First, mistakes for experiment 63, which uses deck A
 	MISTAKE_SUITPLUS, //0 - 7th card in order -- Change spade to heart
 	MISTAKE_NONE,
@@ -97,7 +97,18 @@ constexpr int mistakes[] = {
 	MISTAKE_NONE
 };
 
-const cv::Point2f origPts[] = {
+//First item is code on the Mode card, the second is the criterion/deck number, and third is the vis number
+const int MODE_CRIT_DECK_LUT[4][3] =
+{
+	{ EXP_4_ID, CRITERIA_2, VIS_ARROWS_ON_CARD },
+	{ EXP_3_ID, CRITERIA_2, VIS_REASONING_ON_CARD },
+	{ EXP_2_ID, CRITERIA_1, VIS_ARROWS_ON_CARD },
+	{ EXP_1_ID, CRITERIA_1, VIS_REASONING_ON_CARD }
+};
+constexpr int LUT_START = 60;
+
+
+const cv::Point2f ORIG_PTS[] = {
 	cv::Point2f(0, 0),
 	cv::Point2f(1, 0),
 	cv::Point2f(1, 1),

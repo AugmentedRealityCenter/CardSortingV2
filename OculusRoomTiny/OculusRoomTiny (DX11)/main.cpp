@@ -75,16 +75,6 @@ int g_currentCriteria = CRITERIA_1;
 int g_currentVis = VIS_ARROWS_ON_CARD;
 int g_currentCard = 0; //2 of spades
 
-//First item is code on the Mode card, the second is the criterion/deck number, and third is the vis number
-int modeCritDeckLUT[4][3] =
-{
-	{EXP_4_ID, CRITERIA_2, VIS_ARROWS_ON_CARD},
-	{EXP_3_ID, CRITERIA_2, VIS_REASONING_ON_CARD},
-	{EXP_2_ID, CRITERIA_1, VIS_ARROWS_ON_CARD},
-	{EXP_1_ID, CRITERIA_1, VIS_REASONING_ON_CARD}
-};
-const int LUTStart = 60;
-
 bool g_imgExpCompDirty = true;
 
 //From www.blackpawn.com/texts/pointinpoly
@@ -195,8 +185,8 @@ void updateExperiment(const std::vector< int > &markerId,
 				g_imgExpCompDirty = true;
 			}
 			g_currentCritDeckMode = markerId[i];
-			g_currentCriteria = modeCritDeckLUT[g_currentCritDeckMode - LUTStart][1];
-			g_currentVis = modeCritDeckLUT[g_currentCritDeckMode - LUTStart][2];
+			g_currentCriteria = MODE_CRIT_DECK_LUT[g_currentCritDeckMode - LUT_START][1];
+			g_currentVis = MODE_CRIT_DECK_LUT[g_currentCritDeckMode - LUT_START][2];
 
 			text_overlay.setTo(cv::Scalar(255, 255, 255));
 			cv::putText(text_overlay, "Exp " + std::to_string(g_currentCritDeckMode),
@@ -224,7 +214,7 @@ int applyError(int realCardNum) {
 
 	//Only make mistakes on g_currentCritDeckMode 60, 61, 62, 63
 	if (g_currentCriteria == EXP_1_ID || g_currentCriteria == EXP_4_ID) {
-		switch (mistakes[realCardNum + offset]) {
+		switch (MISTAKES[realCardNum + offset]) {
 		case MISTAKE_BIGLITTLE:
 			fakeCardNum = fakeCardNum ^ 4; //Flips the high order bit of the card
 			// number ... so 0 becomes 4, 5 becomes 1, and so on.
@@ -329,8 +319,8 @@ void fillMarkerWithImage(unsigned char* target, const cv::Mat &source, int ovWid
 		maxX = maxX + (expansion / 2)*diffX;
 
 		//Compute perspective projection here
-		cv::Mat perspProj = getPerspectiveTransform(corners.data(), origPts);
-		cv::Mat invPerspProj = getPerspectiveTransform(origPts, corners.data());
+		cv::Mat perspProj = getPerspectiveTransform(corners.data(), ORIG_PTS);
+		cv::Mat invPerspProj = getPerspectiveTransform(ORIG_PTS, corners.data());
 
 		static std::vector<cv::Point2f> eCorners;
 		static std::vector<cv::Point2f> eOrigPts;
