@@ -40,6 +40,7 @@ limitations under the License.
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include "experimentConstants.h"
 #include "OculusTexture.h"
 
 extern int InitializeCamPlane(ID3D11Device* Device,
@@ -68,104 +69,6 @@ std::vector<cv::Mat > img_r;
 cv::Mat text_overlay;
 
 void rotateCorners(std::vector<cv::Point2f> &rotatedCorners);
-
-
-#define VIS_ARROWS_ON_CARD 0
-#define VIS_REASONING_ON_CARD 1
-//#define VIS_ARROWS_ON_BOX 2
-
-
-#define SUIT_SPADE 0
-#define SUIT_HEART 1
-#define SUIT_CLUB 2
-#define SUIT_DIAMOND 3
-
-#define EXP_1_ID 63
-#define EXP_2_ID 62
-#define EXP_3_ID 61
-#define EXP_4_ID 60
-
-#define CRITERIA_1 63
-#define CRITERIA_2 60
-
-//#define LEFT_BOX_ID 58
-//#define RIGHT_BOX_ID 59
-
-#define MISTAKE_NONE 0
-#define MISTAKE_EVENODD 1
-#define MISTAKE_BIGLITTLE 2
-#define MISTAKE_SUITPLUS 4
-#define MISTAKE_SUITMINUS 8
-
-//Index is card number, NOT order in which subject will see cards
-int mistakes[] = {
-	//First, mistakes for experiment 63, which uses deck A
-	MISTAKE_SUITPLUS, //0 - 7th card in order -- Change spade to heart
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_SUITMINUS, //7 - 31st
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_SUITMINUS, //12 - 24th
-	MISTAKE_NONE,
-	MISTAKE_EVENODD, //14 - 16th card seen
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_SUITMINUS, //23 - 19th
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_EVENODD, //26 - 25th
-	MISTAKE_EVENODD, //27 - 11th card seen 
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_EVENODD, //31 - 28th
-	//Mistakes for experiment 60, deck B
-	MISTAKE_NONE, //0
-	MISTAKE_SUITMINUS, //1 - 28th card seen
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_EVENODD, //5 - 19th card seen
-	MISTAKE_NONE,
-	MISTAKE_EVENODD, //7 - 31st card seen
-	MISTAKE_BIGLITTLE, //8 - 25th card seen
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_SUITPLUS, //11 - 7th card seen
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_BIGLITTLE, //21 - 10th card seen
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_SUITPLUS, //26 - 21st card seen
-	MISTAKE_NONE,
-	MISTAKE_EVENODD, //28 - 14th card seen
-	MISTAKE_NONE,
-	MISTAKE_NONE,
-	MISTAKE_NONE
-};
 
 int g_currentCritDeckMode = EXP_1_ID;
 int g_currentCriteria = CRITERIA_1;
@@ -390,12 +293,6 @@ int updateCard(const std::vector< int > &markerId,
 }
 */
 
-cv::Point2f origPts[] = {
-  cv::Point2f(0, 0),
-  cv::Point2f(1, 0),
-  cv::Point2f(1, 1),
-  cv::Point2f(0, 1)
-};
 
 /**
 
