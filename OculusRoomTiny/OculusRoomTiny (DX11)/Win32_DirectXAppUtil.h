@@ -346,7 +346,7 @@ struct DirectX11
 };
 
 // global DX11 state
-static struct DirectX11 DIRECTX;
+extern struct DirectX11 DIRECTX;
 
 //------------------------------------------------------------
 /*struct Texture

@@ -1,4 +1,3 @@
-#pragma once
 
 //------------------------------------------------------------
 // ovrSwapTextureSet wrapper class that also maintains the render target views
