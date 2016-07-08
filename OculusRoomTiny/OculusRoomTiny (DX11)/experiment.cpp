@@ -270,7 +270,7 @@ void expr::fillMarkerWithImage(unsigned char* target, const cv::Mat &source, int
 						continue;
 					}
 
-					for (int offset = 0; offset < 4; offset++) {
+					for (int offset = 0; offset < 3; offset++) {
 						target[target_index + offset] =
 							(3 * (int)source.data[src_index + offset] +
 								1 * (int)target[target_index + offset]) / 4;
@@ -457,6 +457,80 @@ void expr::processMarkers(unsigned char* p, int ovWidth, int ovHeight,
 	}*/
 }
 
+void getImg()
+{
+	img_left = cv::imread("left.png", CV_LOAD_IMAGE_COLOR);
+	img_right = cv::imread("right.png", CV_LOAD_IMAGE_COLOR);
+	//img_up = cv::imread("up.png", CV_LOAD_IMAGE_COLOR);
+
+	img_exps.push_back(cv::imread("exp60.png", CV_LOAD_IMAGE_COLOR));
+	img_exps.push_back(cv::imread("exp61.png", CV_LOAD_IMAGE_COLOR));
+	img_exps.push_back(cv::imread("exp62.png", CV_LOAD_IMAGE_COLOR));
+	img_exps.push_back(cv::imread("exp63.png", CV_LOAD_IMAGE_COLOR));
+
+	img_exp_composite = cv::imread("exp60.png", CV_LOAD_IMAGE_COLOR);
+
+	img_l.push_back(cv::imread("L1.png", CV_LOAD_IMAGE_COLOR));
+	img_l.push_back(cv::imread("L2.png", CV_LOAD_IMAGE_COLOR));
+	img_l.push_back(cv::imread("L3.png", CV_LOAD_IMAGE_COLOR));
+	img_l.push_back(cv::imread("L4.png", CV_LOAD_IMAGE_COLOR));
+	img_l.push_back(cv::imread("L5.png", CV_LOAD_IMAGE_COLOR));
+
+	img_r.push_back(cv::imread("R1.png", CV_LOAD_IMAGE_COLOR));
+	img_r.push_back(cv::imread("R2.png", CV_LOAD_IMAGE_COLOR));
+	img_r.push_back(cv::imread("R3.png", CV_LOAD_IMAGE_COLOR));
+	img_r.push_back(cv::imread("R4.png", CV_LOAD_IMAGE_COLOR));
+	img_r.push_back(cv::imread("R5.png", CV_LOAD_IMAGE_COLOR));
+
+	text_overlay.create(32, 150, CV_8UC3);
+	text_overlay.setTo(cv::Scalar(255, 255, 255));
+	cv::putText(text_overlay, "Exp " + std::to_string(g_currentCritDeckMode),
+		cv::Point(0, 24), cv::FONT_HERSHEY_SIMPLEX, 1.0,
+		cv::Scalar(255.0, 0.0, 0.0));
+}
+
+bool createMirror(D3D11_TEXTURE2D_DESC* ptd, ovrResult* pResult, ovrHmd* pHMD, ovrTexture** mirrorTexture) {
+	// Create a mirror to see on the monitor.
+	ptd->ArraySize = 1;
+	ptd->Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	ptd->Width = DIRECTX.WinSizeW;
+	ptd->Height = DIRECTX.WinSizeH;
+	ptd->Usage = D3D11_USAGE_DEFAULT;
+	ptd->SampleDesc.Count = 1;
+	ptd->MipLevels = 1;
+	*pResult = ovr_CreateMirrorTextureD3D11(*pHMD, DIRECTX.Device, ptd, 0,
+		mirrorTexture);
+	if (!OVR_SUCCESS(*pResult))
+		return false;
+	else
+	    return true;
+}
+
+bool createEyeTexture(ovrHmd* pHMD, ovrHmdDesc* hmdDesc, OculusTexture* (&pEyeRenderTexture)[2], int& eye, ovrSizei& idealSize) {
+
+		pEyeRenderTexture[eye] = new OculusTexture();
+		if (!pEyeRenderTexture[eye]->Init(*pHMD, idealSize.w, idealSize.h))
+			return false;
+
+	return true;
+}
+
+bool createTexture(ovrHmd* pHMD, ovrRecti(&pEyeRenderViewport)[2], ovrHmdDesc* hmdDesc, OculusTexture* (&pEyeRenderTexture)[2], DepthBuffer* (&pEyeDepthBuffer)[2], int& eye, ovrSizei& idealSize) {
+	// Make the eye render buffers (caution if actual size < requested due to HW
+	// limits). 
+
+	pEyeDepthBuffer[eye] = new DepthBuffer(DIRECTX.Device, idealSize.w,
+		idealSize.h);
+	pEyeRenderViewport[eye].Pos.x = 0;
+	pEyeRenderViewport[eye].Pos.y = 0;
+	pEyeRenderViewport[eye].Size = idealSize;
+
+	if (!pEyeRenderTexture[eye]->TextureSet)
+		return false;
+
+	return true;
+}
+
 bool expr::MainLoop(bool retryCreate)
 {
 	// Initialize these to nullptr here to handle device lost failures cleanly
@@ -487,38 +561,23 @@ bool expr::MainLoop(bool retryCreate)
 
 	for (int eye = 0; eye < 2; ++eye)
 	{
-		ovrSizei idealSize =
-			ovr_GetFovTextureSize(HMD, (ovrEyeType)eye, hmdDesc.DefaultEyeFov[eye],
-				1.0f);
-		pEyeRenderTexture[eye] = new OculusTexture();
-		if (!pEyeRenderTexture[eye]->Init(HMD, idealSize.w, idealSize.h))
+		ovrSizei idealSize = ovr_GetFovTextureSize(HMD, (ovrEyeType)eye, hmdDesc.DefaultEyeFov[eye], 1.0f);
+	
+		if (!createEyeTexture(&HMD, &hmdDesc, pEyeRenderTexture, eye, idealSize ))
 		{
 			if (retryCreate) goto Done;
 			VALIDATE(OVR_SUCCESS(result), "Failed to create eye texture.");
 		}
-		pEyeDepthBuffer[eye] = new DepthBuffer(DIRECTX.Device, idealSize.w,
-			idealSize.h);
-		eyeRenderViewport[eye].Pos.x = 0;
-		eyeRenderViewport[eye].Pos.y = 0;
-		eyeRenderViewport[eye].Size = idealSize;
-		if (!pEyeRenderTexture[eye]->TextureSet)
+		
+		if (!createTexture(&HMD, eyeRenderViewport, &hmdDesc, pEyeRenderTexture, pEyeDepthBuffer,eye, idealSize))
 		{
 			if (retryCreate) goto Done;
 			VALIDATE(false, "Failed to create texture.");
 		}
 	}
 
-	// Create a mirror to see on the monitor.
-	td.ArraySize = 1;
-	td.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-	td.Width = DIRECTX.WinSizeW;
-	td.Height = DIRECTX.WinSizeH;
-	td.Usage = D3D11_USAGE_DEFAULT;
-	td.SampleDesc.Count = 1;
-	td.MipLevels = 1;
-	result = ovr_CreateMirrorTextureD3D11(HMD, DIRECTX.Device, &td, 0,
-		&mirrorTexture);
-	if (!OVR_SUCCESS(result))
+	// Create a mirror to see on the monitor.	
+	if (!createMirror(&td, &result, &HMD, &mirrorTexture))
 	{
 		if (retryCreate) goto Done;
 		VALIDATE(false, "Failed to create mirror texture.");
@@ -540,7 +599,7 @@ bool expr::MainLoop(bool retryCreate)
 	int locationID = 0;
 	OVR::Camprop cameraMode = OVR::OV_CAMVR_FULL;
 	if (__argc > 2) {
-		printf("Ovrvisin Pro mode changed.");
+		printf("Ovrvision Pro mode changed.");
 		//__argv[0]; ApplicationPath
 		locationID = atoi(__argv[1]);
 		cameraMode = (OVR::Camprop)atoi(__argv[2]);
@@ -560,34 +619,7 @@ bool expr::MainLoop(bool retryCreate)
 			1.0f);
 	}
 
-	img_left = cv::imread("left.png", CV_LOAD_IMAGE_COLOR);
-	img_right = cv::imread("right.png", CV_LOAD_IMAGE_COLOR);
-	//img_up = cv::imread("up.png", CV_LOAD_IMAGE_COLOR);
-
-	img_exps.push_back(cv::imread("exp60.png", CV_LOAD_IMAGE_COLOR));
-	img_exps.push_back(cv::imread("exp61.png", CV_LOAD_IMAGE_COLOR));
-	img_exps.push_back(cv::imread("exp62.png", CV_LOAD_IMAGE_COLOR));
-	img_exps.push_back(cv::imread("exp63.png", CV_LOAD_IMAGE_COLOR));
-
-	img_exp_composite = cv::imread("exp60.png", CV_LOAD_IMAGE_COLOR);
-
-	img_l.push_back(cv::imread("L1.png", CV_LOAD_IMAGE_COLOR));
-	img_l.push_back(cv::imread("L2.png", CV_LOAD_IMAGE_COLOR));
-	img_l.push_back(cv::imread("L3.png", CV_LOAD_IMAGE_COLOR));
-	img_l.push_back(cv::imread("L4.png", CV_LOAD_IMAGE_COLOR));
-	img_l.push_back(cv::imread("L5.png", CV_LOAD_IMAGE_COLOR));
-
-	img_r.push_back(cv::imread("R1.png", CV_LOAD_IMAGE_COLOR));
-	img_r.push_back(cv::imread("R2.png", CV_LOAD_IMAGE_COLOR));
-	img_r.push_back(cv::imread("R3.png", CV_LOAD_IMAGE_COLOR));
-	img_r.push_back(cv::imread("R4.png", CV_LOAD_IMAGE_COLOR));
-	img_r.push_back(cv::imread("R5.png", CV_LOAD_IMAGE_COLOR));
-
-	text_overlay.create(32, 150, CV_8UC3);
-	text_overlay.setTo(cv::Scalar(255, 255, 255));
-	cv::putText(text_overlay, "Exp " + std::to_string(g_currentCritDeckMode),
-		cv::Point(0, 24), cv::FONT_HERSHEY_SIMPLEX, 1.0,
-		cv::Scalar(255.0, 0.0, 0.0));
+	getImg();
 
 	{
 		std::vector< int > markerIds;
