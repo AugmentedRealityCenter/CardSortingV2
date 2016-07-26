@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include <time.h>
 
 #include "experiment.h"
 #include "experimentConstants.h"
@@ -30,6 +31,7 @@ std::vector<cv::Mat > img_l;
 std::vector<cv::Mat > img_r;
 
 cv::Mat text_overlay;
+cv::Mat text_overlay_2;
 
 int g_currentCritDeckMode = EXP_1_ID;
 int g_currentCriteria = CRITERIA_1;
@@ -37,6 +39,22 @@ int g_currentVis = VIS_ARROWS_ON_CARD;
 int g_currentCard = 0; //2 of spades
 
 bool g_imgExpCompDirty = true;
+
+std::vector<int> sampleArr;
+
+std::vector<int> expr::getRandomNumbers(int size) {
+	
+	std::vector<int> list;
+	for (int i = 1; i <= 32; i++) {
+		list.push_back(i);
+	}
+	for (int j = 0; j < 31; j++) {
+		int random = rand() % (31-j) + j;
+		std::swap(list[j], list[random]);
+	}
+	list.resize(size);
+	return list;
+}
 
 bool expr::sameSide(cv::Point2f & p1, cv::Point2f & p2, cv::Point2f & a, cv::Point2f & b)
 {
@@ -165,8 +183,10 @@ int expr::applyError(int realCardNum) {
 	return fakeCardNum;
 }
 
-int expr::updateCard(const std::vector< int > &markerId,
+int expr::updateCard(unsigned char* p, const std::vector< int > &markerId,
 	const std::vector< std::vector<cv::Point2f> > &markerCorners) {
+	
+	bool found = false;
 	int index = -1;
 	for (unsigned int i = 0; i < markerId.size(); i++) {
 		float mArea = markerAreaApprox(markerCorners[i]);
@@ -180,6 +200,14 @@ int expr::updateCard(const std::vector< int > &markerId,
 			g_currentCard = applyError(markerId[i]);
 			index = i;
 		}
+		
+		for (size_t j = 0; j < sampleArr.size() && !found; j++) {
+			if (markerId[i] == sampleArr[j]) {
+				addOverlay3(p, ovWidth, ovHeight, text_overlay_2);
+				found = true;
+			}			
+		}
+		
 	}
 
 	return index;
@@ -376,17 +404,32 @@ void expr::addOverlay2(unsigned char* p, int ovWidth, int ovHeight,
 	}
 }
 
+void expr::addOverlay3(unsigned char* p, int ovWidth, int ovHeight,
+	const cv::Mat &overlay) {
+	for (int row = 0; row < ovHeight && row < overlay.rows; row++) {
+		for (int col = 0; col < ovWidth && col < overlay.cols; col++) {
+			int pindex = (ovWidth / 2 - overlay.cols / 2 + col) + (500 + row)*ovWidth;
+			int oindex = col + row*overlay.cols;
+
+			for (int i = 0; i < 3; i++) {
+				p[4 * pindex + i] = overlay.data[3 * oindex + i];
+			}
+		}
+	}
+}
+
 void expr::processMarkers(unsigned char* p, int ovWidth, int ovHeight,
 	const std::vector< int > &markerIds,
 	const std::vector< std::vector<cv::Point2f> > &markerCorners) {
 	updateExperiment(markerIds, markerCorners); //Switch experiments
-	int cardIndex = updateCard(markerIds, markerCorners); //Switch currentCard,
+	int cardIndex = updateCard(p, markerIds, markerCorners); //Switch currentCard,
 														  //if necessary, and get index for rendering
 
 														  //std::pair<int, int> boxIndices = findBoxes(markerIds);
 
 														  //Check which way the current card should go
 	bool goLeft = cardGoesLeft(g_currentCard, g_currentCriteria);
+
 
 	if ((g_currentVis == VIS_ARROWS_ON_CARD || g_currentVis == VIS_REASONING_ON_CARD)
 		&& cardIndex != -1) {
@@ -487,6 +530,15 @@ void getImg()
 	cv::putText(text_overlay, "Exp " + std::to_string(g_currentCritDeckMode),
 		cv::Point(0, 24), cv::FONT_HERSHEY_SIMPLEX, 1.0,
 		cv::Scalar(255.0, 0.0, 0.0));
+
+	text_overlay_2.create(100, 600, CV_8UC3);
+	text_overlay_2.setTo(cv::Scalar(255, 255, 255));
+	cv::putText(text_overlay_2, "Please double check the card!",
+		cv::Point(150, 50), cv::FONT_HERSHEY_SIMPLEX, 0.5,
+		cv::Scalar(0.0, 0.0, 0.0));
+	cv::putText(text_overlay_2, "If there is any error, inform the experimenter",
+		cv::Point(100, 75), cv::FONT_HERSHEY_SIMPLEX, 0.5,
+		cv::Scalar(0.0, 0.0, 0.0));
 }
 
 bool createMirror(D3D11_TEXTURE2D_DESC* ptd, ovrResult* pResult, ovrHmd* pHMD, ovrTexture** mirrorTexture) {
@@ -531,8 +583,12 @@ bool createTexture(ovrHmd* pHMD, ovrRecti(&pEyeRenderViewport)[2], ovrHmdDesc* h
 	return true;
 }
 
+
 bool expr::MainLoop(bool retryCreate)
 {
+	srand((unsigned int)time(nullptr));
+	sampleArr = getRandomNumbers(NUMBLE_OF_SAMPLE);
+
 	// Initialize these to nullptr here to handle device lost failures cleanly
 	ovrTexture     * mirrorTexture = nullptr;
 	OculusTexture  * pEyeRenderTexture[2] = { nullptr, nullptr };
@@ -725,7 +781,7 @@ bool expr::MainLoop(bool retryCreate)
 							markerCorners);
 						addOverlay(p, ovWidth, ovHeight, text_overlay);
 						addOverlay2(p, ovWidth, ovHeight,
-							img_exps[g_currentCriteria % 60], 64);
+							img_exps[g_currentCriteria % 60], 64);						
 						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 					}
 					else {
@@ -745,7 +801,7 @@ bool expr::MainLoop(bool retryCreate)
 							markerCorners);
 						addOverlay(p, ovWidth, ovHeight, text_overlay);
 						addOverlay2(p, ovWidth, ovHeight,
-							img_exps[g_currentCriteria % 60], 0);
+							img_exps[g_currentCriteria % 60], 0);						
 						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 					}
 					RendererCamPlane(DIRECTX.Device, DIRECTX.Context);

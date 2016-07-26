@@ -18,6 +18,8 @@ constexpr int EXP_4_ID = 60;
 constexpr int CRITERIA_1 = 63;
 constexpr int CRITERIA_2 = 60;
 
+constexpr int NUMBLE_OF_SAMPLE = 4;
+
 //constexpr int LEFT_BOX_ID = 58
 //constexpr inte RIGHT_BOX_ID = 59
 

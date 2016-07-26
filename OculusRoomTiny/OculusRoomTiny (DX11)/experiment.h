@@ -20,6 +20,15 @@
 class expr {
 public:	
 
+	/**
+	@brief	Generate an array of some random numbers
+
+	@param	size	 The size of the output array that we want
+
+	@return An array that contains some randomly generated numbers
+	*/
+	static std::vector<int> getRandomNumbers(int size);
+
 	//From www.blackpawn.com/texts/pointinpoly
 	static bool sameSide(cv::Point2f &p1, cv::Point2f &p2, cv::Point2f &a,
 		cv::Point2f &b);
@@ -79,12 +88,13 @@ public:
 	/**
 	@brief	Scan marker ids to see which card we are looking at.
 
+	@param [in,out]	p
 	@param	markerId	 	Identifier for the marker.
 	@param	markerCorners	The marker corners.
 
 	@return	the index where the card was found, for use in lookup into markerCorners.
 	*/
-	static int updateCard(const std::vector< int > &markerId,
+	static int updateCard(unsigned char* p, const std::vector< int > &markerId,
 		const std::vector< std::vector<cv::Point2f> > &markerCorners);
 
 
@@ -163,6 +173,17 @@ public:
 	*/
 	static void addOverlay2(unsigned char* p, int ovWidth, int ovHeight,
 		const cv::Mat &overlay, int xoffset);
+
+	/**
+	@brief	Adds an overlay that shows a notice telling user to double check the card they are holding.
+
+	@param [in,out]	p
+	@param	ovWidth			   	Width of the ovr image.
+	@param	ovHeight		   	Height of the ovr image.
+	@param overlay	            The overlay.
+	*/
+	static void expr::addOverlay3(unsigned char* p, int ovWidth, int ovHeight,
+		const cv::Mat &overlay);
 
 	/**
 	@brief	Process the markers.
