@@ -399,10 +399,10 @@ void expr::addOverlay2(unsigned char* p, int ovWidth, int ovHeight,
 }
 
 void expr::addOverlay3(unsigned char* p, int ovWidth, int ovHeight,
-	const cv::Mat &overlay) {
+	const cv::Mat &overlay, int xoffset) {
 	for (int row = 0; row < ovHeight && row < overlay.rows; row++) {
 		for (int col = 0; col < ovWidth && col < overlay.cols; col++) {
-			int pindex = (ovWidth / 2 - overlay.cols / 2 + col) + (500 + row)*ovWidth;
+			int pindex = (xoffset + ovWidth / 2 - overlay.cols / 2 + col) + (500 + row)*ovWidth;
 			int oindex = col + row*overlay.cols;
 
 			for (int i = 0; i < 3; i++) {
@@ -775,12 +775,12 @@ bool expr::MainLoop(bool retryCreate)
 							markerCorners);
 						addOverlay(p, ovWidth, ovHeight, text_overlay);
 						addOverlay2(p, ovWidth, ovHeight,
-							img_exps[g_currentCriteria % 60], 64);	
+							img_exps[g_currentCriteria % 60], 128);	
 						
 						bool found = false;
 						for (size_t j = 0; j < sampleArr.size() && !found; j++) {
 							if (g_realCurrentCard == sampleArr[j]) {
-								addOverlay3(p, ovWidth, ovHeight, text_overlay_2);
+								addOverlay3(p, ovWidth, ovHeight, text_overlay_2, 128);
 								found = true;
 							}
 						}
@@ -809,7 +809,7 @@ bool expr::MainLoop(bool retryCreate)
 						bool found = false;
 						for (size_t j = 0; j < sampleArr.size() && !found; j++) {
 							if (g_realCurrentCard == sampleArr[j]) {
-								addOverlay3(p, ovWidth, ovHeight, text_overlay_2);
+								addOverlay3(p, ovWidth, ovHeight, text_overlay_2, 0);
 								found = true;
 							}
 						}

@@ -181,9 +181,10 @@ public:
 	@param	ovWidth			   	Width of the ovr image.
 	@param	ovHeight		   	Height of the ovr image.
 	@param overlay	            The overlay.
+	@param xoffset				Amount to shift the overlay left or right
 	*/
 	static void expr::addOverlay3(unsigned char* p, int ovWidth, int ovHeight,
-		const cv::Mat &overlay);
+		const cv::Mat &overlay, int xoffset);
 
 	/**
 	@brief	Process the markers.
