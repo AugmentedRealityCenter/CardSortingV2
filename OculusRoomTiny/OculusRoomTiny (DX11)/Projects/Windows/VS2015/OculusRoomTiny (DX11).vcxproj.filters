@@ -3,6 +3,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\main.cpp" />
     <ClCompile Include="..\..\..\plane.cpp" />
+    <ClCompile Include="..\..\..\experiment.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Win32_DirectXAppUtil.h" />
