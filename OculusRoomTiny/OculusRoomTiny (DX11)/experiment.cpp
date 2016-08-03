@@ -37,6 +37,7 @@ int g_currentCritDeckMode = EXP_1_ID;
 int g_currentCriteria = CRITERIA_1;
 int g_currentVis = VIS_ARROWS_ON_CARD;
 int g_currentCard = 0; //2 of spades
+int g_realCurrentCard = 0;
 
 bool g_imgExpCompDirty = true;
 
@@ -45,7 +46,7 @@ std::vector<int> sampleArr;
 std::vector<int> expr::getRandomNumbers(int size) {
 	
 	std::vector<int> list;
-	for (int i = 1; i <= 32; i++) {
+	for (int i = 0; i < 32; i++) {
 		list.push_back(i);
 	}
 	for (int j = 0; j < 31; j++) {
@@ -198,16 +199,9 @@ int expr::updateCard(unsigned char* p, const std::vector< int > &markerId,
 				g_imgExpCompDirty = true;
 			}
 			g_currentCard = applyError(markerId[i]);
+			g_realCurrentCard = markerId[i];
 			index = i;
 		}
-		
-		for (size_t j = 0; j < sampleArr.size() && !found; j++) {
-			if (markerId[i] == sampleArr[j]) {
-				addOverlay3(p, ovWidth, ovHeight, text_overlay_2);
-				found = true;
-			}			
-		}
-		
 	}
 
 	return index;
@@ -781,7 +775,16 @@ bool expr::MainLoop(bool retryCreate)
 							markerCorners);
 						addOverlay(p, ovWidth, ovHeight, text_overlay);
 						addOverlay2(p, ovWidth, ovHeight,
-							img_exps[g_currentCriteria % 60], 64);						
+							img_exps[g_currentCriteria % 60], 64);	
+						
+						bool found = false;
+						for (size_t j = 0; j < sampleArr.size() && !found; j++) {
+							if (g_realCurrentCard == sampleArr[j]) {
+								addOverlay3(p, ovWidth, ovHeight, text_overlay_2);
+								found = true;
+							}
+						}
+
 						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 					}
 					else {
@@ -801,7 +804,16 @@ bool expr::MainLoop(bool retryCreate)
 							markerCorners);
 						addOverlay(p, ovWidth, ovHeight, text_overlay);
 						addOverlay2(p, ovWidth, ovHeight,
-							img_exps[g_currentCriteria % 60], 0);						
+							img_exps[g_currentCriteria % 60], 0);	
+
+						bool found = false;
+						for (size_t j = 0; j < sampleArr.size() && !found; j++) {
+							if (g_realCurrentCard == sampleArr[j]) {
+								addOverlay3(p, ovWidth, ovHeight, text_overlay_2);
+								found = true;
+							}
+						}
+
 						SetCamImage(DIRECTX.Context, p, ovWidth*ovPixelsize);
 					}
 					RendererCamPlane(DIRECTX.Device, DIRECTX.Context);
